@@ -29,6 +29,7 @@ class USPTO50(Dataset):
         self.token_encoder = {k: v for v, k in enumerate(self.token_decoder)}
 
         self.vocab_size = len(self.token_decoder)
+        self.pad_token_id = self.token_encoder['<pad>']
 
     def __len__(self):
         return self.to_gen
@@ -48,12 +49,14 @@ class USPTO50(Dataset):
         
         # append end of products token
         p = [self.token_encoder['<sop>']] + p + [self.token_encoder['<eop>']]
+        mask = [1] * len(p)
         
-        return torch.tensor(r), torch.tensor(p)
+        return torch.tensor(r), torch.tensor(p), torch.tensor(mask)
 
 
     def collate_fn(self, batch):
-        reactants, products = zip(*batch)
+        reactants, products, mask = zip(*batch)
         reactants = torch.nn.utils.rnn.pad_sequence(reactants, batch_first=True, padding_value=self.token_encoder['<pad>'])
         products = torch.nn.utils.rnn.pad_sequence(products, batch_first=True, padding_value=self.token_encoder['<pad>'])
-        return reactants, products
+        mask = (products != self.token_encoder['<pad>']).bool()
+        return reactants, products, mask

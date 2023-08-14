@@ -946,6 +946,8 @@ class AttentionLayers(nn.Module):
 
         assert not (rotary_xpos and not causal), 'rotary xpos is not compatible with bidirectional attention'
         self.rotary_pos_emb = RotaryEmbedding(rotary_emb_dim, use_xpos = rotary_xpos, scale_base = rotary_xpos_scale_base, interpolation_factor = rotary_interpolation_factor, base_rescale_factor = rotary_base_rescale_factor) if rotary_pos_emb else None
+        if rotary_pos_emb:
+            print('rotary positional embedding enabled')
 
         assert not (alibi_pos_bias and rel_pos_bias), 'you can only choose Alibi positional bias or T5 relative positional bias, not both'
         assert rel_pos_num_buckets <= rel_pos_max_distance, 'number of relative position buckets must be less than the relative position max distance'
@@ -959,14 +961,17 @@ class AttentionLayers(nn.Module):
         if rel_pos_bias:
             assert not flash_attn, 'flash attention not compatible with t5 relative positional bias'
             self.rel_pos = RelativePositionBias(scale = dim_head ** 0.5, causal = causal, heads = heads, num_buckets = rel_pos_num_buckets, max_distance = rel_pos_max_distance)
+            print('t5 relative positional bias enabled')
         elif dynamic_pos_bias:
             assert not flash_attn, 'flash attention not compatible with dynamic positional bias'
             self.rel_pos = DynamicPositionBias(dim = dim // 4, heads = heads, log_distance = dynamic_pos_bias_log_distance, depth = dynamic_pos_bias_mlp_depth, norm = dynamic_pos_bias_norm)
+            print('dynamic positional bias enabled')
         elif alibi_pos_bias:
             alibi_num_heads = default(alibi_num_heads, heads)
             assert alibi_num_heads <= heads, 'number of ALiBi heads must be less than the total number of heads'
             alibi_pos_klass = LearnedAlibiPositionalBias if alibi_learned else AlibiPositionalBias
             self.rel_pos = alibi_pos_klass(heads = alibi_num_heads, total_heads = heads)
+            print('alibi positional bias enabled')
 
         # determine deepnorm and residual scale
 
@@ -1309,10 +1314,13 @@ class TransformerWrapper(nn.Module):
 
         if not (use_abs_pos_emb and not attn_layers.has_pos_emb):
             self.pos_emb = always(0)
+            print('not using positional embedding (NoPE)')
         elif scaled_sinu_pos_emb:
             self.pos_emb = ScaledSinusoidalEmbedding(emb_dim)
+            print('using scaled sinusoidal positional embedding')
         else:
             self.pos_emb = AbsolutePositionalEmbedding(emb_dim, max_seq_len, l2norm_embed = l2norm_embed)
+            print('using absolute positional embedding')
 
         self.emb_frac_gradient = emb_frac_gradient # fraction of the gradient that should go to the embedding, https://arxiv.org/abs/2105.13290
 

@@ -1,6 +1,7 @@
+import random
 import argparse
-import torch
 from glob import glob
+import torch
 
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
@@ -17,6 +18,8 @@ parser.add_argument('--n_head', type=int, default=12, help='number of heads')
 parser.add_argument('--n_embd', type=int, default=768, help='embedding dimension')
 parser.add_argument('--dropout', type=float, default=0.0, help='dropout rate')
 parser.add_argument('--bias', type=bool, default=False, help='whether to use bias in attention layer')
+parser.add_argument('--use_pos_emb', type=bool, default=False, help='whether to use positional embeddings')
+parser.add_argument('--use_rotary_emb', type=bool, default=False, help='whether to use rotary embeddings')
 
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--num_epochs', type=int, default=4800, help='number of epochs')
@@ -28,6 +31,7 @@ parser.add_argument('--weight_decay', type=float, default=1e-1, help='weight dec
 parser.add_argument('--data_dir', type=str, default='data/', help='data directory')
 parser.add_argument('--validate_every', type=int, default=500, help='train iterations')
 parser.add_argument('--validate_for', type=int, default=100, help='validate iterations')
+parser.add_argument('--generate_for', type=int, default=256, help='generate iterations')
 parser.add_argument('--train', type=bool, default=False, help='whether to train the model')
 parser.add_argument('--grad_accum', type=int, default=1, help='gradient accumulation')
 
@@ -37,7 +41,7 @@ parser.add_argument('--task', type=str, default='uspto50', help='task')
 parser.add_argument('--run', type=str, default='exp', help='run name')
 parser.add_argument('--project', type=str, default='uspto50', help='project name')
 parser.add_argument('--entity', type=str, default='retrosynthesis', help='entity name')
-parser.add_argument('--save_dir', type=str, default='', help='save directory')
+parser.add_argument('--save_dir', type=str, default='.', help='save directory')
 parser.add_argument('--log', type=bool, default=False, help='whether to log')
 parser.add_argument('--set_precision', type=bool, default=False, help='whether to set precision')
 
@@ -59,6 +63,7 @@ if __name__ == '__main__':
         train_dataset = USPTO50(config['data_dir'], 'train', config['batch_size']*config['validate_every'])
         val_dataset   = USPTO50(config['data_dir'], 'val', config['batch_size']*config['validate_for'])
         config['vocab_size'] = train_dataset.vocab_size
+        config['pad_token_id'] = train_dataset.pad_token_id
     else:
         raise NotImplementedError
         
@@ -88,8 +93,8 @@ if __name__ == '__main__':
     )
 
     trainer = pl.Trainer(
-        # accelerator='gpu', devices=-1, num_nodes=1, strategy='ddp_find_unused_parameters_True',
-        accelerator='gpu', devices=-1, num_nodes=1, strategy='auto',
+        # accelerator='gpu', devices=-1, num_nodes=1, strategy='auto',
+        accelerator='gpu', devices=-1, num_nodes=1, strategy='ddp_find_unused_parameters_True',
         max_epochs=-1, logger=logger,
         precision='bf16-mixed' if config['set_precision'] else '32-true',
         gradient_clip_val=0.5, gradient_clip_algorithm='norm',
@@ -103,4 +108,27 @@ if __name__ == '__main__':
         trainer.fit(model, train_loader, val_loader)
 
     else:
-        raise NotImplementedError
+        def decode_token(token):
+            return str(chr(max(32, token)))
+
+        def decode_tokens(tokens):
+            return ''.join(list(map(decode_token, tokens)))
+        
+        model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))[0]
+        print(f"loading {model_ckpt}")
+        model = model.load_from_checkpoint(model_ckpt)
+        
+        reactants, products, src_mask = random.choice(val_dataset)
+        reactants = reactants.unsqueeze(0).to(config['device'])
+        products = products.unsqueeze(0).to(config['device'])
+        src_mask = src_mask.unsqueeze(0).to(config['device']).bool()
+        model = model.to(config['device'])
+
+        model.model.eval()
+        sample = model.model.generate(products, reactants[:, :1], reactants.size(1), mask=src_mask)
+        incorrects = (reactants != sample).abs().sum()
+        
+        print(f'incorrects: {incorrects.item()}/{reactants.size(1)}')
+        print('products: ', ''.join([val_dataset.token_decoder[prod] for prod in products[0, :]]))
+        print('reactants: ', ''.join([val_dataset.token_decoder[react] for react in reactants[0, :]]))
+        print('generated: ', ''.join([val_dataset.token_decoder[g] for g in sample[0, :]]))
