@@ -30,6 +30,8 @@ class XTModel(pl.LightningModule):
             dec_use_abs_pos_emb = config['use_pos_emb'],
             enc_rotary_pos_emb = config['use_rotary_emb'],
             dec_rotary_pos_emb = config['use_rotary_emb'],
+            enc_rel_pos_bias = config['use_rel_pos_emb'],
+            dec_rel_pos_bias = config['use_rel_pos_emb'],
         )
         self.model = torch.compile(self.model) if config['is_compile'] else self.model
         

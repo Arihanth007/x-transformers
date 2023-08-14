@@ -20,6 +20,7 @@ parser.add_argument('--dropout', type=float, default=0.0, help='dropout rate')
 parser.add_argument('--bias', type=bool, default=False, help='whether to use bias in attention layer')
 parser.add_argument('--use_pos_emb', type=bool, default=False, help='whether to use positional embeddings')
 parser.add_argument('--use_rotary_emb', type=bool, default=False, help='whether to use rotary embeddings')
+parser.add_argument('--use_rel_pos_emb', type=bool, default=False, help='whether to use relative positional embeddings')
 
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--num_epochs', type=int, default=4800, help='number of epochs')
