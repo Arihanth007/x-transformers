@@ -1,8 +1,7 @@
-import random
 import argparse
 from glob import glob
 import torch
-from tqdm import tqdm
+import pickle
 
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
@@ -33,7 +32,7 @@ parser.add_argument('--weight_decay', type=float, default=1e-1, help='weight dec
 parser.add_argument('--data_dir', type=str, default='data/', help='data directory')
 parser.add_argument('--validate_every', type=int, default=500, help='train iterations')
 parser.add_argument('--validate_for', type=int, default=100, help='validate iterations')
-parser.add_argument('--generate_for', type=int, default=256, help='generate iterations')
+parser.add_argument('--generate_for', type=int, default=2, help='generate iterations')
 parser.add_argument('--train', type=bool, default=False, help='whether to train the model')
 parser.add_argument('--grad_accum', type=int, default=1, help='gradient accumulation')
 
@@ -64,7 +63,7 @@ if __name__ == '__main__':
         from dataloader.uspto import USPTO50
         train_dataset = USPTO50(config['data_dir'], 'train', config['batch_size']*config['validate_every'])
         val_dataset   = USPTO50(config['data_dir'], 'val', config['batch_size']*config['validate_for'])
-        test_dataset  = USPTO50(config['data_dir'], 'val', -1)
+        test_dataset  = USPTO50(config['data_dir'], 'val', config['batch_size']*config['generate_for'])
         config['vocab_size'] = train_dataset.vocab_size
         config['pad_token_id'] = train_dataset.pad_token_id
     else:
@@ -78,7 +77,7 @@ if __name__ == '__main__':
         val_dataset, batch_size=config['batch_size'], collate_fn=val_dataset.collate_fn,
         shuffle=False, num_workers=8, pin_memory=True, prefetch_factor=4)
     test_loader  = DataLoader(
-        test_dataset, batch_size=1, collate_fn=val_dataset.collate_fn,
+        test_dataset, batch_size=config['batch_size'], collate_fn=val_dataset.collate_fn,
         shuffle=False, num_workers=8, pin_memory=True, prefetch_factor=4)
 
     logger = WandbLogger(
@@ -92,7 +91,7 @@ if __name__ == '__main__':
     checkpoint_callback = ModelCheckpoint(
         save_top_k=1,
         save_last=True,
-        monitor="val_loss",
+        monitor="val_char_mismatch",
         mode="min",
         dirpath=f"{config['save_dir']}/{config['project']}/{config['run']}",
         filename="model-{epoch:02d}-{val_loss:.5f}",
@@ -111,46 +110,40 @@ if __name__ == '__main__':
     )
 
     if config['train']:
+        if False:
+            model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))[0]
+            print(f"loading {model_ckpt}")
+            trainer.fit(model, train_loader, val_loader, ckpt_path=model_ckpt)
+
         trainer.fit(model, train_loader, val_loader)
 
     else:
-        def decode_token(token):
-            return str(chr(max(32, token)))
-
-        def decode_tokens(tokens):
-            return ''.join(list(map(decode_token, tokens)))
-        
         model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))[0]
-        print(f"loading {model_ckpt}")
-        model = model.load_from_checkpoint(model_ckpt)
-        
-        model = model.to(config['device'])
-        model.model.eval()
-        
-        # for name, data_set in zip(('Test', 'Train'), (test_dataset, train_dataset)):
-        #     is_correct = 0
-        #     with tqdm(data_set) as pbar:
-        #         for i, (reactants, products, src_mask) in enumerate(pbar):
-        #             reactants = reactants.unsqueeze(0).to(config['device'])
-        #             products = products.unsqueeze(0).to(config['device'])
-        #             src_mask = src_mask.unsqueeze(0).to(config['device']).bool()
+        # print(f"loading {model_ckpt}")
+        # model = model.load_from_checkpoint(model_ckpt)
 
-        #             sample = model.model.generate(products, reactants[:, :1], reactants.size(1), mask=src_mask)
-        #             incorrects = (reactants[:, 1:] != sample[:, :-1]).abs().sum()
-        #             is_correct += incorrects == 0
-        #             pbar.set_postfix({'Accuracy': is_correct.item()/(i+1), 'Avg_incorrect': incorrects.item()/(reactants.size(1)-1)})
-        #     print(f'Final {name} Accuracy: {(is_correct/len(data_set)).item()}')
-        # exit()
+        trainer.test(model, val_loader, ckpt_path=model_ckpt)
+        trainer.test(model, train_loader, ckpt_path=model_ckpt)
 
-        reactants, products, src_mask = random.choice(val_dataset)
-        reactants = reactants.unsqueeze(0).to(config['device'])
-        products = products.unsqueeze(0).to(config['device'])
-        src_mask = src_mask.unsqueeze(0).to(config['device']).bool()
-
-        sample = model.model.generate(products, reactants[:, :1], reactants.size(1), mask=src_mask)
-        incorrects = (reactants[:, 1:] != sample[:, :-1]).abs().sum()
-        
-        print(f'incorrects: {incorrects.item()}/{reactants.size(1)}')
-        print('products : ', ''.join([val_dataset.token_decoder[prod] for prod in products[0, 1:-1]]))
-        print('reactants: ', ''.join([val_dataset.token_decoder[react] for react in reactants[0, 1:-1]]))
-        print('generated: ', ''.join([val_dataset.token_decoder[g] for g in sample[0, :-2]]))
+        out = trainer.predict(model, test_loader, ckpt_path=model_ckpt)
+        dump_data = {'reactants': [], 'generated': []}
+        for batch, sample, character_mismatch, accuracy in out:
+            reactants, products, _ = batch
+            print('-'*100)
+            print(f'accuracy: {100*accuracy:.2f}%')
+            print(f'character_mismatch: {100*character_mismatch:.2f}%')
+            for reactant, product, single_sample in zip(reactants[:, 1:], products[:, 1:], sample[:, :-1]):
+                i = (reactant == val_dataset.token_encoder['<eor>']).nonzero(as_tuple=False)[0]
+                r_smi = ''.join([val_dataset.token_decoder[react] for react in reactant[:i]])
+                dump_data['reactants'].append(r_smi)
+                
+                i = (single_sample == val_dataset.token_encoder['<eor>']).nonzero(as_tuple=False)[0] if val_dataset.token_encoder['<eor>'] in single_sample else single_sample.size(0)
+                g_smi = ''.join([val_dataset.token_decoder[g] for g in single_sample[:i]])
+                dump_data['generated'].append(g_smi)
+                
+                print()
+                print('reactants: ', r_smi)
+                print('generated: ', g_smi)
+                # print('products : ', ''.join([val_dataset.token_decoder[prod] for prod in product]))
+        with open(f"{config['save_dir']}/{config['project']}/{config['run']}/output_dump.pkl", 'wb') as f:
+            pickle.dump(dump_data, f)

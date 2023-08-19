@@ -147,4 +147,4 @@ class AutoregressiveWrapper(nn.Module):
             ignore_index = ignore_index
         )
 
-        return loss
+        return logits, loss

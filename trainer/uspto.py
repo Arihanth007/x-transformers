@@ -2,10 +2,12 @@ import torch
 import torch.nn.functional as F
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from einops import rearrange
 
 import pytorch_lightning as pl
 
 from x_transformers import XTransformer
+from x_transformers.autoregressive_wrapper import top_k
 
 
 class XTModel(pl.LightningModule):
@@ -39,33 +41,70 @@ class XTModel(pl.LightningModule):
 
     def compute_loss(self, logits, targets):
         return F.cross_entropy(logits.contiguous().view(-1, logits.size(-1)), targets.contiguous().view(-1), ignore_index=-1)
+    
+    @torch.no_grad()
+    def metrics(self, batch, logits):
+        reactants, _, _ = batch
+        b, t, v = logits.size()
+        
+        logits = logits.contiguous().reshape(b*t, v)
+        probs = F.softmax(top_k(logits), dim=-1)
+        sample = torch.multinomial(probs, 1)
+        sample = sample.contiguous().reshape(b, -1)
+        
+        mask = (reactants[:, 1:] != self.config['pad_token_id']).float()
+        total_chars = mask.abs().sum()
+        
+        wrong_chars_batch = (reactants[:, 1:] != sample) * mask
+        character_mismatch = wrong_chars_batch.abs().sum()/total_chars
+        accuracy = (torch.sum(wrong_chars_batch, dim=-1) == 0).abs().sum()/b
+        
+        return character_mismatch, accuracy
 
     def forward(self, batch):
         reactants, products, mask = batch
-        loss = self.model(products, reactants, mask=mask)
-        return loss
+        logits, loss = self.model(products, reactants, mask=mask)
+        return logits, loss
 
     def training_step(self, batch, batch_idx):
-        loss = self(batch)
+        logits, loss = self(batch)
+        character_mismatch, accuracy = self.metrics(batch, logits)
+        
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
+        self.log('train_char_mismatch', character_mismatch, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
+        self.log('train_accuracy', accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
         return loss
     
     def validation_step(self, batch, batch_idx):
-        loss = self(batch)
+        logits, loss = self(batch)
+        character_mismatch, accuracy = self.metrics(batch, logits)
+
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
+        self.log('val_char_mismatch', character_mismatch, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
+        self.log('val_accuracy', accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
         return loss
 
     def test_step(self, batch, batch_idx):
-        loss = self(batch)
+        logits, loss = self(batch)
+        character_mismatch, accuracy = self.metrics(batch, logits)
+
         self.log('test_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
+        self.log('test_char_mismatch', character_mismatch, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
+        self.log('test_accuracy', accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
         return loss
     
     def predict_step(self, batch, batch_idx):
         reactants, products, src_mask = batch
         sample = self.model.generate(products, reactants[:, :1], reactants.size(1), mask=src_mask)
-        incorrects = (reactants[:, 1:] != sample[:, :-1]).abs().sum()
-        is_correct = incorrects == 0
-        return incorrects
+
+        mask = (reactants[:, 1:] != self.config['pad_token_id']).float()
+        total_chars = mask.abs().sum()
+        
+        wrong_chars_batch = (reactants[:, 1:] != sample[:, :-1]) * mask
+        character_mismatch = wrong_chars_batch.abs().sum()/total_chars
+        accuracy = (torch.sum(wrong_chars_batch, dim=-1) == 0).abs().sum()/reactants.size(0)
+
+        return batch, sample, character_mismatch, accuracy
     
     def configure_optimizers(self):
         optimizer = AdamW(
