@@ -54,11 +54,18 @@ class XTModel(pl.LightningModule):
         loss = self(batch)
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
         return loss
-    
+
     def test_step(self, batch, batch_idx):
         loss = self(batch)
-        self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
+        self.log('test_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
         return loss
+    
+    def predict_step(self, batch, batch_idx):
+        reactants, products, src_mask = batch
+        sample = self.model.generate(products, reactants[:, :1], reactants.size(1), mask=src_mask)
+        incorrects = (reactants[:, 1:] != sample[:, :-1]).abs().sum()
+        is_correct = incorrects == 0
+        return incorrects
     
     def configure_optimizers(self):
         optimizer = AdamW(

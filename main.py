@@ -2,6 +2,7 @@ import random
 import argparse
 from glob import glob
 import torch
+from tqdm import tqdm
 
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
@@ -63,6 +64,7 @@ if __name__ == '__main__':
         from dataloader.uspto import USPTO50
         train_dataset = USPTO50(config['data_dir'], 'train', config['batch_size']*config['validate_every'])
         val_dataset   = USPTO50(config['data_dir'], 'val', config['batch_size']*config['validate_for'])
+        test_dataset  = USPTO50(config['data_dir'], 'val', -1)
         config['vocab_size'] = train_dataset.vocab_size
         config['pad_token_id'] = train_dataset.pad_token_id
     else:
@@ -74,6 +76,9 @@ if __name__ == '__main__':
         shuffle=True if config['validate_every'] < 0 else False, num_workers=8, pin_memory=True, prefetch_factor=4)
     val_loader   = DataLoader(
         val_dataset, batch_size=config['batch_size'], collate_fn=val_dataset.collate_fn,
+        shuffle=False, num_workers=8, pin_memory=True, prefetch_factor=4)
+    test_loader  = DataLoader(
+        test_dataset, batch_size=1, collate_fn=val_dataset.collate_fn,
         shuffle=False, num_workers=8, pin_memory=True, prefetch_factor=4)
 
     logger = WandbLogger(
@@ -119,17 +124,33 @@ if __name__ == '__main__':
         print(f"loading {model_ckpt}")
         model = model.load_from_checkpoint(model_ckpt)
         
+        model = model.to(config['device'])
+        model.model.eval()
+        
+        # for name, data_set in zip(('Test', 'Train'), (test_dataset, train_dataset)):
+        #     is_correct = 0
+        #     with tqdm(data_set) as pbar:
+        #         for i, (reactants, products, src_mask) in enumerate(pbar):
+        #             reactants = reactants.unsqueeze(0).to(config['device'])
+        #             products = products.unsqueeze(0).to(config['device'])
+        #             src_mask = src_mask.unsqueeze(0).to(config['device']).bool()
+
+        #             sample = model.model.generate(products, reactants[:, :1], reactants.size(1), mask=src_mask)
+        #             incorrects = (reactants[:, 1:] != sample[:, :-1]).abs().sum()
+        #             is_correct += incorrects == 0
+        #             pbar.set_postfix({'Accuracy': is_correct.item()/(i+1), 'Avg_incorrect': incorrects.item()/(reactants.size(1)-1)})
+        #     print(f'Final {name} Accuracy: {(is_correct/len(data_set)).item()}')
+        # exit()
+
         reactants, products, src_mask = random.choice(val_dataset)
         reactants = reactants.unsqueeze(0).to(config['device'])
         products = products.unsqueeze(0).to(config['device'])
         src_mask = src_mask.unsqueeze(0).to(config['device']).bool()
-        model = model.to(config['device'])
 
-        model.model.eval()
         sample = model.model.generate(products, reactants[:, :1], reactants.size(1), mask=src_mask)
-        incorrects = (reactants != sample).abs().sum()
+        incorrects = (reactants[:, 1:] != sample[:, :-1]).abs().sum()
         
         print(f'incorrects: {incorrects.item()}/{reactants.size(1)}')
-        print('products: ', ''.join([val_dataset.token_decoder[prod] for prod in products[0, :]]))
-        print('reactants: ', ''.join([val_dataset.token_decoder[react] for react in reactants[0, :]]))
-        print('generated: ', ''.join([val_dataset.token_decoder[g] for g in sample[0, :]]))
+        print('products : ', ''.join([val_dataset.token_decoder[prod] for prod in products[0, 1:-1]]))
+        print('reactants: ', ''.join([val_dataset.token_decoder[react] for react in reactants[0, 1:-1]]))
+        print('generated: ', ''.join([val_dataset.token_decoder[g] for g in sample[0, :-2]]))
