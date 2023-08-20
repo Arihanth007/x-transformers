@@ -2,7 +2,7 @@
 #SBATCH -A plafnet2
 #SBATCH -p plafnet2
 #SBATCH -J eval_t5
-#SBATCH --output=eval/%x.%j.out
+#SBATCH --output=logs/eval-%x.%j.out
 #SBATCH --nodes=1
 #SBATCH -c 9
 #SBATCH --gres=gpu:1

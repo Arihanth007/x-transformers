@@ -127,7 +127,7 @@ if __name__ == '__main__':
 
         out = trainer.predict(model, test_loader, ckpt_path=model_ckpt)
         dump_data = {'reactants': [], 'generated': []}
-        for batch, sample, character_mismatch, accuracy in out:
+        for i, (batch, sample, character_mismatch, accuracy) in enumerate(out):
             reactants, products, _ = batch
             print('-'*100)
             print(f'accuracy: {100*accuracy:.2f}%')
@@ -141,9 +141,10 @@ if __name__ == '__main__':
                 g_smi = ''.join([val_dataset.token_decoder[g] for g in single_sample[:i]])
                 dump_data['generated'].append(g_smi)
                 
-                print()
-                print('reactants: ', r_smi)
-                print('generated: ', g_smi)
-                # print('products : ', ''.join([val_dataset.token_decoder[prod] for prod in product]))
+                if i == 0:
+                    print()
+                    print('reactants: ', r_smi)
+                    print('generated: ', g_smi)
+                    # print('products : ', ''.join([val_dataset.token_decoder[prod] for prod in product]))
         with open(f"{config['save_dir']}/{config['project']}/{config['run']}/output_dump.pkl", 'wb') as f:
             pickle.dump(dump_data, f)
