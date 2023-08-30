@@ -20,9 +20,9 @@ python main.py \
     --n_head 8 \
     --n_embd 512 \
     --block_size 512 \
-    --batch_size 64 \
+    --batch_size 32 \
     --vocab_size 256 \
-    --grad_accum 2 \
+    --grad_accum 4 \
     --validate_every -1 \
     --validate_for -1 \
     --device_ids 0 1 2 3 \
