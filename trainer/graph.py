@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 
 from x_transformers.x_transformers import TransformerWrapper, Decoder
 from x_transformers.autoregressive_wrapper import top_k, AutoregressiveWrapper
-from graph_transformer_pytorch.graph_transformer_pytorch.graph_transformer_pytorch import GraphTransformer
+from graph_transformer.graph_transformer import GraphTransformer
 
 
 class XTModel(pl.LightningModule):
