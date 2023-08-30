@@ -185,22 +185,26 @@ class TokenEmbedding(nn.Module):
 # positional embeddings
 
 class AbsolutePositionalEmbedding(nn.Module):
-    def __init__(self, dim, max_seq_len, l2norm_embed = False):
+    def __init__(self, dim, max_seq_len, l2norm_embed = False, num_layers = 1):
         super().__init__()
+        self.dim = dim
         self.scale = dim ** -0.5 if not l2norm_embed else 1.
         self.max_seq_len = max_seq_len
         self.l2norm_embed = l2norm_embed
-        self.emb = nn.Embedding(max_seq_len, dim)
+        self.emb = nn.ModuleList(nn.Embedding(max_seq_len, dim) for _ in range(num_layers))
 
     def forward(self, x, pos = None):
         seq_len, device = x.shape[1], x.device
         assert seq_len <= self.max_seq_len, f'you are passing in a sequence length of {seq_len} but your absolute positional embedding has a max sequence length of {self.max_seq_len}'
 
         if not exists(pos):
-            pos = torch.arange(seq_len, device = device)
+            pos = [torch.arange(seq_len, device = device)]
 
-        pos_emb = self.emb(pos)
-        pos_emb = pos_emb * self.scale
+        pos_emb = self.emb[0](pos[0][:, :seq_len]) * self.scale
+        for i, emb in enumerate(self.emb):
+            if i == 0: 
+                continue
+            pos_emb = pos_emb + emb(pos[i][:, :seq_len]) * self.scale
         return l2norm(pos_emb) if self.l2norm_embed else pos_emb
 
 class ScaledSinusoidalEmbedding(nn.Module):
@@ -1295,7 +1299,8 @@ class TransformerWrapper(nn.Module):
         use_abs_pos_emb = True,
         scaled_sinu_pos_emb = False,
         l2norm_embed = False,
-        emb_frac_gradient = 1. # GLM-130B and Cogview successfully used this, set at 0.1
+        emb_frac_gradient = 1., # GLM-130B and Cogview successfully used this, set at 0.1
+        num_pos_layers = 1,
     ):
         super().__init__()
         assert isinstance(attn_layers, AttentionLayers), 'attention layers must be one of Encoder or Decoder'
@@ -1319,7 +1324,7 @@ class TransformerWrapper(nn.Module):
             self.pos_emb = ScaledSinusoidalEmbedding(emb_dim)
             print('using scaled sinusoidal positional embedding')
         else:
-            self.pos_emb = AbsolutePositionalEmbedding(emb_dim, max_seq_len, l2norm_embed = l2norm_embed)
+            self.pos_emb = AbsolutePositionalEmbedding(emb_dim, max_seq_len, l2norm_embed = l2norm_embed, num_layers = num_pos_layers)
             print('using absolute positional embedding')
 
         self.emb_frac_gradient = emb_frac_gradient # fraction of the gradient that should go to the embedding, https://arxiv.org/abs/2105.13290
@@ -1370,8 +1375,9 @@ class TransformerWrapper(nn.Module):
 
         # absolute positional embedding
 
-        external_pos_emb = exists(pos) and pos.dtype != torch.long
-        pos_emb = self.pos_emb(x, pos = pos) if not external_pos_emb else pos
+        # external_pos_emb = exists(pos) and pos.dtype != torch.long
+        # pos_emb = self.pos_emb(x, pos = pos) if not external_pos_emb else pos
+        pos_emb = self.pos_emb(x, pos = pos)
         x = self.token_emb(x) + pos_emb
 
         # for summing embeddings passed externally - needs this for self-conditioning in non-autoregressive training
@@ -1594,15 +1600,16 @@ class XTransformer(nn.Module):
         encodings = self.encoder(seq_in, mask = mask, attn_mask = attn_mask, return_embeddings = True)
         return self.decoder.generate(seq_out_start, seq_len, context = encodings, context_mask = mask, **kwargs)
 
-    def forward(self, src, tgt, mask = None, attn_mask = None, src_prepend_embeds = None):
+    def forward(self, src, tgt, mask = None, attn_mask = None, src_prepend_embeds = None, react_pos=None, prod_pos=None):
 
         if exists(src_prepend_embeds) and exists(mask):
             mask = pad_at_dim(mask, (src_prepend_embeds.shape[-2], 0), dim = -1, value = True)
 
-        enc = self.encoder(src, mask = mask, attn_mask = attn_mask, prepend_embeds = src_prepend_embeds, return_embeddings = True)
+        enc = self.encoder(src, mask = mask, attn_mask = attn_mask, prepend_embeds = src_prepend_embeds, return_embeddings = True, pos=prod_pos)
+        print(f'encoder output shape: {enc.shape}')
 
         if self.training and self.cross_attn_tokens_dropout > 0:
             enc, mask = dropout_seq(enc, mask, self.cross_attn_tokens_dropout)
 
-        logits, loss = self.decoder(tgt, context = enc, context_mask = mask)
+        logits, loss = self.decoder(tgt, context = enc, context_mask = mask, pos=react_pos)
         return logits, loss

@@ -7,9 +7,11 @@ from torch.utils.data import Dataset
 
 class USPTO50(Dataset):
     def __init__(self, data_dir: str='data/uspto50', split: str='train', to_gen: int=-1):
+        # data_dir = 'data/uspto_arjun'
+        extra = ''
         
         # dataset files
-        df = pd.read_pickle(f'{data_dir}/processed_tokens.pickle')
+        df = pd.read_pickle(f'{data_dir}/processed_tokens{extra}.pickle')
         indices = np.load(f'{data_dir}/{split}_indices.npy')
         
         # read entire dataset and convert to list
@@ -24,7 +26,7 @@ class USPTO50(Dataset):
         self.to_gen = to_gen if to_gen > 0 else len(self.reactants)
         
         # token encoder and decoder
-        with open(f'{data_dir}/vocab.txt', 'r') as f:
+        with open(f'{data_dir}/vocab{extra}.txt', 'r') as f:
             self.token_decoder = f.read().splitlines()
         self.token_encoder = {k: v for v, k in enumerate(self.token_decoder)}
 

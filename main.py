@@ -1,3 +1,4 @@
+import gc
 import argparse
 from glob import glob
 import torch
@@ -21,6 +22,7 @@ parser.add_argument('--bias', type=bool, default=False, help='whether to use bia
 parser.add_argument('--use_pos_emb', type=bool, default=False, help='whether to use positional embeddings')
 parser.add_argument('--use_rotary_emb', type=bool, default=False, help='whether to use rotary embeddings')
 parser.add_argument('--use_rel_pos_emb', type=bool, default=False, help='whether to use relative positional embeddings')
+parser.add_argument('--mask_prob', type=float, default=0.0, help='mask probability')
 
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--num_epochs', type=int, default=4800, help='number of epochs')
@@ -45,6 +47,7 @@ parser.add_argument('--entity', type=str, default='retrosynthesis', help='entity
 parser.add_argument('--save_dir', type=str, default='.', help='save directory')
 parser.add_argument('--log', type=bool, default=False, help='whether to log')
 parser.add_argument('--set_precision', type=bool, default=False, help='whether to set precision')
+parser.add_argument('--device_ids', type=int, nargs='*', help='device ids')
 
 config = vars(parser.parse_args())
 config['data_dir'] = config["data_dir"] + config["task"]
@@ -52,20 +55,83 @@ config['data_dir'] = config["data_dir"] + config["task"]
 
 if __name__ == '__main__':
     torch.set_float32_matmul_precision('medium')
+    torch.cuda.empty_cache()
+    gc.collect()
 
+    # basic language modelling but doesnt work anymore
     if config['task'] == 'shakespeare_char':
         from trainer.shakespeare import XTModel
         from dataloader.shakespeare import Shakespeare
         train_dataset = Shakespeare(config['data_dir'], 'train', config['block_size'], config['batch_size']*config['validate_every'])
         val_dataset   = Shakespeare(config['data_dir'], 'val', config['block_size'], config['batch_size']*config['validate_for'])
+    
+    # USPTO-50 training
     elif config['task'] == 'uspto50':
         from trainer.uspto import XTModel
         from dataloader.uspto import USPTO50
         train_dataset = USPTO50(config['data_dir'], 'train', config['batch_size']*config['validate_every'])
         val_dataset   = USPTO50(config['data_dir'], 'val', config['batch_size']*config['validate_for'])
         test_dataset  = USPTO50(config['data_dir'], 'val', config['batch_size']*config['generate_for'])
-        config['vocab_size'] = train_dataset.vocab_size
+        # config['vocab_size'] = train_dataset.vocab_size
         config['pad_token_id'] = train_dataset.pad_token_id
+    
+    # experimental instruction fine-tuning
+    elif config['task'] == 'uspto_ifn':
+        config['data_dir'] = 'data/uspto50'
+        from trainer.uspto_ifn import XTModel
+        from dataloader.uspto_ifn import USPTO50
+        train_dataset = USPTO50(config['data_dir'], 'train', config['batch_size']*config['validate_every'])
+        val_dataset   = USPTO50(config['data_dir'], 'valid', config['batch_size']*config['validate_for'])
+        test_dataset  = USPTO50(config['data_dir'], 'valid', config['batch_size']*config['generate_for'])
+        # config['vocab_size'] = train_dataset.vocab_size
+        config['pad_token_id'] = train_dataset.pad_token_id
+    
+    # pretraining on zinc
+    elif config['task'] == 'zinc':
+        config['data_dir'] = '/scratch/arihanth.srikar/data/zinc'
+        from trainer.zinc import XTModel
+        from dataloader.zinc import Zinc
+        train_dataset = Zinc(config['data_dir'], 'train', config['batch_size']*config['validate_every'])
+        val_dataset   = Zinc(config['data_dir'], 'val', config['batch_size']*config['validate_for'])
+        test_dataset  = Zinc(config['data_dir'], 'val', config['batch_size']*config['generate_for'])
+        # config['vocab_size'] = train_dataset.vocab_size
+        config['pad_token_id'] = train_dataset.pad_token_id
+        config['mask_token_id'] = train_dataset.mask_token_id
+        config['mask_ignore_token_ids'] = train_dataset.mask_ignore_token_ids
+        print(len(config['mask_ignore_token_ids']), config['mask_ignore_token_ids'])
+    
+    # graph encoder and llm decoder
+    elif config['task'] == 'graph':
+        config['data_dir'] = '/scratch/arihanth.srikar/data/zinc'
+        from trainer.graph import XTModel
+        from dataloader.graph import GraphDataset
+        train_dataset = GraphDataset(config['data_dir'], 'train', config['batch_size']*config['validate_every'], pretrain=False, is_test=True)
+        val_dataset   = GraphDataset(config['data_dir'], 'val', config['batch_size']*config['validate_for'], pretrain=False, is_test=True)
+        test_dataset  = GraphDataset(config['data_dir'], 'val', config['batch_size']*config['generate_for'], pretrain=False, is_test=True)
+        # config['vocab_size'] = train_dataset.vocab_size
+        config['pad_token_id'] = train_dataset.pad_token_id
+        config['mask_token_id'] = train_dataset.mask_token_id
+        config['mask_ignore_token_ids'] = train_dataset.mask_ignore_token_ids
+        config['node_embd'] = 9
+        config['edge_embd'] = 3
+        print(len(config['mask_ignore_token_ids']), config['mask_ignore_token_ids'])
+   
+    # graph encoder and llm decoder on rooted smiles
+    elif config['task'] == 'rooted_graph':
+        config['data_dir'] = 'data/rooted'
+        from trainer.graph import XTModel
+        from dataloader.rooted_graph import RootedGraphDataset
+        train_dataset = RootedGraphDataset(config['data_dir'], 'train', config['batch_size']*config['validate_every'])
+        val_dataset   = RootedGraphDataset(config['data_dir'], 'val', config['batch_size']*config['validate_for'])
+        test_dataset  = RootedGraphDataset(config['data_dir'], 'val', config['batch_size']*config['generate_for'])
+        # config['vocab_size'] = train_dataset.vocab_size
+        config['pad_token_id'] = train_dataset.pad_token_id
+        config['mask_token_id'] = train_dataset.mask_token_id
+        config['mask_ignore_token_ids'] = train_dataset.mask_ignore_token_ids
+        config['node_embd'] = 9
+        config['edge_embd'] = 3
+        print(len(config['mask_ignore_token_ids']), config['mask_ignore_token_ids'])
+    
     else:
         raise NotImplementedError
         
@@ -91,15 +157,14 @@ if __name__ == '__main__':
     checkpoint_callback = ModelCheckpoint(
         save_top_k=1,
         save_last=True,
-        monitor="val_char_mismatch",
+        monitor="val_loss" if config['task'] == 'zinc' else "val_char_mismatch",
         mode="min",
         dirpath=f"{config['save_dir']}/{config['project']}/{config['run']}",
         filename="model-{epoch:02d}-{val_loss:.5f}",
     )
 
     trainer = pl.Trainer(
-        # accelerator='gpu', devices=-1, num_nodes=1, strategy='auto',
-        accelerator='gpu', devices=-1, num_nodes=1, strategy='ddp_find_unused_parameters_True',
+        accelerator='gpu', devices=config['device_ids'], strategy='ddp_find_unused_parameters_True' if 'uspto' in config['task'] else 'ddp',
         max_epochs=-1, logger=logger,
         precision='bf16-mixed' if config['set_precision'] else '32-true',
         gradient_clip_val=0.5, gradient_clip_algorithm='norm',
@@ -124,6 +189,8 @@ if __name__ == '__main__':
 
         trainer.test(model, val_loader, ckpt_path=model_ckpt)
         trainer.test(model, train_loader, ckpt_path=model_ckpt)
+
+        exit()
 
         out = trainer.predict(model, test_loader, ckpt_path=model_ckpt)
         dump_data = {'reactants': [], 'generated': []}

@@ -93,8 +93,8 @@ p
 <mask>
 <sum_pred>
 <sum_react>
-<first_pred>
-<second_pred>
-<third_pred>
-<fourth_pred>
+<0>
+<1>
+<2>
+<3>
 <pad>
