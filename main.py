@@ -48,6 +48,7 @@ parser.add_argument('--save_dir', type=str, default='.', help='save directory')
 parser.add_argument('--log', type=bool, default=False, help='whether to log')
 parser.add_argument('--set_precision', type=bool, default=False, help='whether to set precision')
 parser.add_argument('--device_ids', type=int, nargs='*', help='device ids')
+parser.add_argument('--vocab_file', type=str, default='', help='vocab files')
 
 config = vars(parser.parse_args())
 config['data_dir'] = config["data_dir"] + config["task"]
@@ -123,14 +124,26 @@ if __name__ == '__main__':
         from dataloader.rooted_graph import RootedGraphDataset
         train_dataset = RootedGraphDataset(config['data_dir'], 'train', config['batch_size']*config['validate_every'])
         val_dataset   = RootedGraphDataset(config['data_dir'], 'val', config['batch_size']*config['validate_for'])
-        test_dataset  = RootedGraphDataset(config['data_dir'], 'val', config['batch_size']*config['generate_for'])
+        test_dataset  = RootedGraphDataset(config['data_dir'], 'test', config['batch_size']*config['validate_for'])
         # config['vocab_size'] = train_dataset.vocab_size
         config['pad_token_id'] = train_dataset.pad_token_id
         config['mask_token_id'] = train_dataset.mask_token_id
         config['mask_ignore_token_ids'] = train_dataset.mask_ignore_token_ids
         config['node_embd'] = 9
         config['edge_embd'] = 3
-        print(len(config['mask_ignore_token_ids']), config['mask_ignore_token_ids'])
+    
+    # llm encoder and decoder on rooted smiles
+    elif config['task'] == 'rooted_smiles':
+        config['data_dir'] = 'data/rooted'
+        from trainer.uspto import XTModel
+        from dataloader.rooted_smiles import RootedSmilesDataset
+        train_dataset = RootedSmilesDataset(config['data_dir'], 'train', config['batch_size']*config['validate_every'], config['vocab_file'])
+        val_dataset   = RootedSmilesDataset(config['data_dir'], 'val', config['batch_size']*config['validate_for'], config['vocab_file'])
+        test_dataset  = RootedSmilesDataset(config['data_dir'], 'test', config['batch_size']*config['validate_for'], config['vocab_file'])
+        # config['vocab_size'] = train_dataset.vocab_size
+        config['pad_token_id'] = train_dataset.pad_token_id
+        config['mask_token_id'] = train_dataset.mask_token_id
+        config['mask_ignore_token_ids'] = train_dataset.mask_ignore_token_ids
     
     else:
         raise NotImplementedError
@@ -164,7 +177,7 @@ if __name__ == '__main__':
     )
 
     trainer = pl.Trainer(
-        accelerator='gpu', devices=config['device_ids'], strategy='ddp_find_unused_parameters_True' if 'uspto' in config['task'] else 'ddp',
+        accelerator='gpu', devices=config['device_ids'], strategy='ddp_find_unused_parameters_True' if 'uspto' in config['task'] or 'smiles' in config['task'] else 'ddp',
         max_epochs=-1, logger=logger,
         precision='bf16-mixed' if config['set_precision'] else '32-true',
         gradient_clip_val=0.5, gradient_clip_algorithm='norm',
@@ -183,12 +196,13 @@ if __name__ == '__main__':
         trainer.fit(model, train_loader, val_loader)
 
     else:
-        model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))[0]
+        model_ckpts = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))
         # print(f"loading {model_ckpt}")
         # model = model.load_from_checkpoint(model_ckpt)
 
-        trainer.test(model, val_loader, ckpt_path=model_ckpt)
-        trainer.test(model, train_loader, ckpt_path=model_ckpt)
+        for model_ckpt in model_ckpts:
+            trainer.test(model, val_loader, ckpt_path=model_ckpt)
+            trainer.test(model, test_loader, ckpt_path=model_ckpt)
 
         exit()
 

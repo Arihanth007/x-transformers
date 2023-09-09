@@ -134,3 +134,4 @@ dmypy.json
 *.pth
 *.log
 *.out
+rooted_old/

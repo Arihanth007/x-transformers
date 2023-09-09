@@ -1606,7 +1606,6 @@ class XTransformer(nn.Module):
             mask = pad_at_dim(mask, (src_prepend_embeds.shape[-2], 0), dim = -1, value = True)
 
         enc = self.encoder(src, mask = mask, attn_mask = attn_mask, prepend_embeds = src_prepend_embeds, return_embeddings = True, pos=prod_pos)
-        print(f'encoder output shape: {enc.shape}')
 
         if self.training and self.cross_attn_tokens_dropout > 0:
             enc, mask = dropout_seq(enc, mask, self.cross_attn_tokens_dropout)

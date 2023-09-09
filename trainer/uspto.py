@@ -28,6 +28,7 @@ class XTModel(pl.LightningModule):
             tie_token_emb = True,  # tie embeddings of encoder and decoder
             pad_value=config['pad_token_id'],
             ignore_index=config['pad_token_id'],
+            mask_prob=config['mask_prob'],
             enc_use_abs_pos_emb = config['use_pos_emb'],
             dec_use_abs_pos_emb = config['use_pos_emb'],
             enc_rotary_pos_emb = config['use_rotary_emb'],
@@ -36,8 +37,9 @@ class XTModel(pl.LightningModule):
             dec_rel_pos_bias = config['use_rel_pos_emb'],
             dec_ff_glu = True,
             dec_ff_no_bias = True,
+            dec_shift_tokens = 1,
         )
-        self.model = torch.compile(self.model) if config['is_compile'] else self.model
+        self.model = torch.compile(self.model, dynamic=True) if config['is_compile'] else self.model
         
         self.save_hyperparameters()
 
@@ -57,9 +59,9 @@ class XTModel(pl.LightningModule):
         mask = (reactants[:, 1:] != self.config['pad_token_id']).float()
         total_chars = mask.abs().sum()
         
-        wrong_chars_batch = (reactants[:, 1:] != sample) * mask
-        character_mismatch = wrong_chars_batch.abs().sum()/total_chars
-        accuracy = (torch.sum(wrong_chars_batch, dim=-1) == 0).abs().sum()/b
+        wrong_chars_batch = ((reactants[:, 1:] != sample) * mask).int()
+        character_mismatch = wrong_chars_batch.sum()/total_chars
+        accuracy = (torch.sum(wrong_chars_batch, dim=-1) == 0).sum()/b
         
         return character_mismatch, accuracy
 
