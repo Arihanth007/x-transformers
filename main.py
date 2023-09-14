@@ -192,8 +192,9 @@ if __name__ == '__main__':
             model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))[0]
             print(f"loading {model_ckpt}")
             trainer.fit(model, train_loader, val_loader, ckpt_path=model_ckpt)
-
-        trainer.fit(model, train_loader, val_loader)
+        
+        else:
+            trainer.fit(model, train_loader, val_loader)
 
     else:
         model_ckpts = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))

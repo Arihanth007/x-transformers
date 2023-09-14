@@ -7,12 +7,12 @@ from SmilesPE.pretokenizer import atomwise_tokenizer
 
 
 class Zinc(Dataset):
-    def __init__(self, data_dir: str='/scratch/arihanth.srikar/data/zinc', split: str='train', to_gen: int=-1):
+    def __init__(self, data_dir: str='/scratch/arihanth.srikar/data/zinc', split: str='train', to_gen: int=-1, pd_df: pd.DataFrame=None):
         extra = ''
         
         # dataset files
-        # df = pd.read_csv(f'{data_dir}/x001.csv')   # this is 10% of the dataset
-        df = pd.read_pickle(f'{data_dir}/zinc.pkl')  # this is the entire dataset
+        # df = pd.read_csv(f'{data_dir}/x001.csv') if pd_df is None else pd_df     # this is 10% of the dataset
+        df = pd.read_pickle(f'{data_dir}/zinc.pkl') if pd_df is None else pd_df  # this is the entire dataset
         df = df[df['set'] == split].copy()
 
         print('Read dataset')
@@ -50,8 +50,8 @@ class Zinc(Dataset):
         p = [self.token_encoder[tok] for tok in atomwise_tokenizer(p)]
         
         # append end of products token
-        p = [self.token_encoder['<sop>']] + p + [self.token_encoder['<eop>']]
-        mask = [1] * len(p)
+        p = [self.token_encoder['<sos>']] + p + [self.token_encoder['<eos>']]
+        mask = [True] * len(p)
         
         return torch.tensor(p), torch.tensor(mask)
 

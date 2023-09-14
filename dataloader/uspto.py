@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 
 
 class USPTO50(Dataset):
-    def __init__(self, data_dir: str='data/uspto50', split: str='train', to_gen: int=-1):
+    def __init__(self, data_dir: str='data/uspto50', split: str='train', to_gen: int=-1, vocab_file: str='') -> None:
         # data_dir = 'data/uspto_arjun'
         extra = ''
         
@@ -26,12 +26,15 @@ class USPTO50(Dataset):
         self.to_gen = to_gen if to_gen > 0 else len(self.reactants)
         
         # token encoder and decoder
-        with open(f'{data_dir}/vocab{extra}.txt', 'r') as f:
+        vocab_file = vocab_file if vocab_file != '' else f'{data_dir}/vocab{extra}.txt'
+        with open(vocab_file, 'r') as f:
             self.token_decoder = f.read().splitlines()
         self.token_encoder = {k: v for v, k in enumerate(self.token_decoder)}
 
         self.vocab_size = len(self.token_decoder)
         self.pad_token_id = self.token_encoder['<pad>']
+        self.mask_token_id = self.token_encoder['<mask>']
+        self.mask_ignore_token_ids = [v for k, v in self.token_encoder.items() if '<' in k and '>' in k]
 
     def __len__(self):
         return self.to_gen
@@ -47,10 +50,10 @@ class USPTO50(Dataset):
         r, p = self.reactants[idx], self.products[idx]
         
         # prepend start of reactants token
-        r = [self.token_encoder['<sor>']] + r + [self.token_encoder['<eor>']]
+        r = [self.token_encoder['<sos>']] + r + [self.token_encoder['<eos>']]
         
         # append end of products token
-        p = [self.token_encoder['<sop>']] + p + [self.token_encoder['<eop>']]
+        p = [self.token_encoder['<sos>']] + p + [self.token_encoder['<eos>']]
         mask = [1] * len(p)
         
         return torch.tensor(r), torch.tensor(p), torch.tensor(mask)
