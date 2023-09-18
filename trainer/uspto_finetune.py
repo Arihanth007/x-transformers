@@ -36,6 +36,7 @@ class XTModel(pl.LightningModule):
                 rel_pos_bias = config['use_rel_pos_emb'],
                 ff_glu = True,
                 ff_no_bias = True,
+                attn_flash = True if not config['use_rel_pos_emb'] else False,
             ),
         )
 
@@ -63,9 +64,12 @@ class XTModel(pl.LightningModule):
                 cross_attend = True,
                 ff_glu = True,
                 ff_no_bias = True,
-                cross_residual_attn = True,
-                shift_tokens = 1,
-                emb_dropout = 0.2,
+                # cross_residual_attn = True,
+                # shift_tokens = 1,
+                attn_flash = True if not config['use_rel_pos_emb'] else False,
+                layer_dropout = 0.1,   # stochastic depth - dropout entire layer
+                attn_dropout = 0.1,    # dropout post-attention
+                ff_dropout = 0.1,      # feedforward dropout
             ),
         )
 
@@ -74,7 +78,7 @@ class XTModel(pl.LightningModule):
             decoder,
             ignore_index=config['pad_token_id'],
             pad_value=config['pad_token_id'],
-            mask_prob=config['mask_prob'],
+            # mask_prob=config['mask_prob'],
         )
 
         # dont compile

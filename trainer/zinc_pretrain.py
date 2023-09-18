@@ -1,8 +1,7 @@
-from typing import Any, Optional
 import torch
 import torch.nn.functional as F
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 import pytorch_lightning as pl
 
@@ -12,9 +11,10 @@ from x_transformers.autoregressive_wrapper import top_k, AutoregressiveWrapper
 
 
 class XTModel(pl.LightningModule):
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, task: str='dec') -> None:
         super().__init__()
         self.config = config
+        self.task = task
 
         # transformer
         encoder = TransformerWrapper(
@@ -29,6 +29,7 @@ class XTModel(pl.LightningModule):
                 rel_pos_bias = config['use_rel_pos_emb'],
                 ff_glu = True,
                 ff_no_bias = True,
+                attn_flash = True if not config['use_rel_pos_emb'] else False,
             ),
         )
 
@@ -37,7 +38,7 @@ class XTModel(pl.LightningModule):
             encoder,
             mask_token_id = config['mask_token_id'], # the token id reserved for masking
             pad_token_id = config['pad_token_id'],   # the token id for padding
-            mask_prob = 0.15,     # masking probability for masked language modeling
+            mask_prob = 0.15 if self.task == 'enc' else 0.0,     # masking probability for masked language modeling
             replace_prob = 0.90,  # ~10% probability that token will not be masked, but included in loss, as detailed in the epaper
             mask_ignore_token_ids = config['mask_ignore_token_ids']  # other tokens to exclude from masking, include the [cls] and [sep] here
         )
@@ -56,8 +57,9 @@ class XTModel(pl.LightningModule):
                 cross_attend = True,
                 ff_glu = True,
                 ff_no_bias = True,
-                cross_residual_attn = True,
-                shift_tokens = 1,
+                # cross_residual_attn = True,
+                # shift_tokens = 1,
+                attn_flash = True if not config['use_rel_pos_emb'] else False,
             ),
         )
 
@@ -66,25 +68,23 @@ class XTModel(pl.LightningModule):
             decoder,
             ignore_index=config['pad_token_id'],
             pad_value=config['pad_token_id'],
-            mask_prob=config['mask_prob'],
+            # mask_prob=config['mask_prob'],
         )
 
         # dont compile
         self.encoder = torch.compile(self.encoder) if config['is_compile'] else self.encoder
         self.decoder = torch.compile(self.decoder) if config['is_compile'] else self.decoder
 
-        # number of epochs to train the only encoder for
-        self.enc_epochs = config['enc_epochs']
-        
         self.save_hyperparameters()
 
     def compute_loss(self, logits, targets):
         return F.cross_entropy(logits.contiguous().view(-1, logits.size(-1)), targets.contiguous().view(-1), ignore_index=-1)
     
     @torch.no_grad()
-    def metrics(self, batch, logits):
+    def metrics(self, batch, logits, task='dec'):
         smiles, _ = batch
         tgt = smiles[:, 1:]
+        logits = logits[:, 1:] if task == 'enc' else logits
         b, t, v = logits.size()
         
         logits = logits.contiguous().reshape(b*t, v)
@@ -110,25 +110,21 @@ class XTModel(pl.LightningModule):
         return enc_logits, enc_loss
 
     def training_step(self, batch, batch_idx):
-        logits, loss = self(batch, task='enc' if self.current_epoch < self.enc_epochs else 'dec')
+        logits, loss = self(batch, task=self.task)
+        character_mismatch, accuracy = self.metrics(batch, logits, task=self.task)
+        
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
-        
-        if self.current_epoch >= self.enc_epochs:
-            character_mismatch, accuracy = self.metrics(batch, logits)
-            self.log('train_char_mismatch', character_mismatch, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
-            self.log('train_accuracy', accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
-        
+        self.log('train_char_mismatch', character_mismatch, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
+        self.log('train_accuracy', accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
         return loss
     
     def validation_step(self, batch, batch_idx):
-        logits, loss = self(batch, task='enc' if self.current_epoch < self.enc_epochs else 'dec')
+        logits, loss = self(batch, task=self.task)
+        character_mismatch, accuracy = self.metrics(batch, logits, task=self.task)
+
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
-
-        if self.current_epoch >= self.enc_epochs:
-            character_mismatch, accuracy = self.metrics(batch, logits)
-            self.log('val_char_mismatch', character_mismatch, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
-            self.log('val_accuracy', accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
-
+        self.log('val_char_mismatch', character_mismatch, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
+        self.log('val_accuracy', accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True, batch_size=self.config['batch_size'], sync_dist=True)
         return loss
     
     def configure_optimizers(self):
@@ -140,8 +136,7 @@ class XTModel(pl.LightningModule):
             )
         
         num_batches = self.config['num_batches'] // self.trainer.accumulate_grad_batches
-        self.print(f'num_batches: {num_batches}')
-        scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=self.enc_epochs*num_batches, eta_min=self.config['learning_rate']/10)
+        scheduler = CosineAnnealingLR(optimizer, T_max=num_batches, eta_min=self.config['learning_rate'])
         scheduler = {
             'scheduler': scheduler,
             'interval': 'step', # or 'epoch'

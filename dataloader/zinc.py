@@ -48,9 +48,18 @@ class Zinc(Dataset):
         # treat the smiles as products
         p = self.smiles[idx]
         p = [self.token_encoder[tok] for tok in atomwise_tokenizer(p)]
+
+        mol_count = 1
+        for prob in range(2, 4):
+            if torch.rand(1) < (1/prob):
+                new_idx = torch.randint(0, len(self.smiles), (1,)).item()
+                new_p = self.smiles[new_idx]
+                new_p = [self.token_encoder[tok] for tok in atomwise_tokenizer(new_p)]
+                p = p + [self.token_encoder['.']] + new_p
+                mol_count += 1
         
         # append end of products token
-        p = [self.token_encoder['<sos>']] + p + [self.token_encoder['<eos>']]
+        p = [self.token_encoder[f'<{mol_count}>']] + [self.token_encoder['<sos>']] + p + [self.token_encoder['<eos>']]
         mask = [True] * len(p)
         
         return torch.tensor(p), torch.tensor(mask)

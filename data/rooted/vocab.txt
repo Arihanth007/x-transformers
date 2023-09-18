@@ -76,8 +76,8 @@ N
 <mask>
 <sum_pred>
 <sum_react>
-<0>
 <1>
 <2>
 <3>
+<4>
 <pad>

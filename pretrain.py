@@ -26,10 +26,9 @@ parser.add_argument('--mask_prob', type=float, default=0.0, help='mask probabili
 
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--num_epochs', type=int, default=4800, help='number of epochs')
-parser.add_argument('--enc_epochs', type=int, default=1000, help='number of epochs to train the encoder for')
 parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning rate')
 parser.add_argument('--beta1', type=float, default=0.9, help='beta1')
-parser.add_argument('--beta2', type=float, default=0.99, help='beta2')
+parser.add_argument('--beta2', type=float, default=0.999, help='beta2')
 parser.add_argument('--weight_decay', type=float, default=1e-1, help='weight decay')
 
 parser.add_argument('--data_dir', type=str, default='data/', help='data directory')
@@ -51,6 +50,8 @@ parser.add_argument('--log', type=bool, default=False, help='whether to log')
 parser.add_argument('--set_precision', type=bool, default=False, help='whether to set precision')
 parser.add_argument('--device_ids', type=int, nargs='*', help='device ids')
 parser.add_argument('--vocab_file', type=str, default='', help='vocab files')
+parser.add_argument('--sub_task', type=str, default='dec', help='sub task')
+parser.add_argument('--load_from', type=str, default='', help='load checkpoint from')
 
 config = vars(parser.parse_args())
 config['data_dir'] = config["data_dir"] + config["task"]
@@ -64,7 +65,7 @@ if __name__ == '__main__':
     # pretraining on zinc
     if config['task'] == 'zinc':
         config['data_dir'] = '/scratch/arihanth.srikar/data/zinc'
-        # df = pd.read_csv(f'{config["data_dir"]}/x001.csv')     # this is 10% of the dataset
+        # df = pd.read_csv(f'/scratch/arihanth.srikar/x001.csv')     # this is 10% of the dataset
         df = pd.read_pickle(f'{config["data_dir"]}/zinc.pkl')   # this is the entire dataset
         from trainer.zinc_pretrain import XTModel
         from dataloader.zinc import Zinc
@@ -116,9 +117,9 @@ if __name__ == '__main__':
         shuffle=False, num_workers=4, pin_memory=True, prefetch_factor=2)
     
     # train batches
-    config['num_batches'] = len(train_loader)
+    config['num_batches'] = len(train_loader) * config['num_epochs']
     
-    model = XTModel(config, train_dataset.token_encoder, train_dataset.token_decoder) if 'finetune' in config['task'] else XTModel(config)
+    model = XTModel(config, train_dataset.token_encoder, train_dataset.token_decoder) if 'finetune' in config['task'] else XTModel(config, task=config['sub_task'])
 
     logger = WandbLogger(
         # entity=config['entity'],
@@ -131,10 +132,10 @@ if __name__ == '__main__':
     checkpoint_callback = ModelCheckpoint(
         save_top_k=1,
         save_last=True,
-        monitor="val_loss" if config['task'] == 'zinc' else "val_char_mismatch",
+        monitor="val_loss" if config['sub_task'] == 'enc' else "val_char_mismatch",
         mode="min",
         dirpath=f"{config['save_dir']}/{config['project']}/{config['run']}",
-        filename="model-{epoch:02d}-{val_loss:.5f}",
+        filename="model-{epoch:02d}-{val_loss:.5f}" if config['sub_task'] == 'enc' else "model-{epoch:02d}-{val_char_mismatch:.5f}",
     )
 
     trainer = pl.Trainer(
@@ -162,6 +163,15 @@ if __name__ == '__main__':
     else:
 
         if config['train']:
-            trainer.fit(model, train_loader, val_loader)
+            model_ckpt = sorted(glob(f"/scratch/arihanth.srikar/uspto50/pretrain-zinc-enc/*.ckpt"))
+            model_ckpt = model_ckpt[-1] if len(model_ckpt) else None
+            print('Training from scratch' if model_ckpt is None else f'Resuming from {model_ckpt}')
+
+            trainer.fit(model, train_loader, val_loader, ckpt_path=model_ckpt)
+
         else:
+            model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))
+            model_ckpt = model_ckpt[0] if len(model_ckpt) else None
+            print('Randomly initializing model' if model_ckpt is None else f'Loading {model_ckpt}')
+
             trainer.test(model, test_loader)
