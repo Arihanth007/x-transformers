@@ -32,7 +32,7 @@ class Levenshtein_augment():
         ans = list(range(mol.GetNumAtoms()))
         randomizations = []
 
-        while len(randomizations) < tries:
+        for _ in range(tries):
             #print(randomization)
             # Permute atom ordering
             np.random.shuffle(ans)
@@ -41,13 +41,17 @@ class Levenshtein_augment():
             # Convert random mol back to SMILES
             rSMILES = Chem.MolToSmiles(rmol, canonical=False)
             randomizations.append(rSMILES)
+            # Convert random mol back to canonical SMILES
+            rSMILES = Chem.MolToSmiles(rmol, canonical=True)
+            randomizations.append(rSMILES)
+
         return list(set(randomizations))
 
     
     def levenshtein_pairing(self, in_smiles, out_smiles):
         """performs randomizations of lists and finds the target sequence most similar to the input sequences"""
         #TODO make larger number of tries for in randomizations + sampling of set to make chance of getting different SMILES higher for small molecules
-        in_randomizations  = self.randomize_smiles(in_smiles, self.randomization_tries)[0:self.source_augmentation]
+        in_randomizations  = self.randomize_smiles(in_smiles, self.randomization_tries)
         out_randomizations = self.randomize_smiles(out_smiles, self.randomization_tries)
         in_randomizations  = [in_smiles] + in_randomizations
         out_randomizations = [out_smiles] + out_randomizations
@@ -62,11 +66,11 @@ class Levenshtein_augment():
                     ratio = lv.ratio(smile, out_smile)
                     score += ratio
                 scores.append(score)
-            #
+
             ranks = np.argsort(scores)
             best_idx = ranks[-1]
             best_outsmile = out_randomizations[best_idx]
-            pairs.append( ( in_smile, best_outsmile, scores[best_idx]))
+            pairs.append((in_smile, best_outsmile, scores[best_idx]))
         
         return pairs
 
@@ -83,7 +87,7 @@ class Levenshtein_augment():
 
         samples = []
         pairs_copy = []
-        #Sample by emptying the list by random selectio without replacement
+        #Sample by emptying the list by random selection without replacement
         #If list gets empty, recreate it.
         while len(samples) < times:
             if not pairs_copy:
@@ -92,6 +96,19 @@ class Levenshtein_augment():
             samples.append(pairs_copy.pop())
 
         return samples
+    
+    def pick_best(self, pairs):
+        """Picks the best pair from a list of pairs"""
+        
+        scores = [pair[2] for pair in pairs]
+        ranks = np.argsort(scores)
+
+        final_pairs = []
+        for i in range(self.source_augmentation):
+            best_idx = ranks[-1-i]
+            best_pair = pairs[best_idx]
+            final_pairs.append(best_pair)
+        return final_pairs
             
 
 

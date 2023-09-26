@@ -5,7 +5,7 @@
 #SBATCH --output=logs/pretrain-%x.%j.out
 #SBATCH -c 36
 #SBATCH --gres=gpu:4
-#SBATCH --mem=128G
+#SBATCH --mem-per-cpu=6G
 #SBATCH --time=4-00:00:00
 
 mkdir -p /scratch/arihanth.srikar/

@@ -67,9 +67,9 @@ class XTModel(pl.LightningModule):
                 # cross_residual_attn = True,
                 # shift_tokens = 1,
                 attn_flash = True if not config['use_rel_pos_emb'] else False,
-                layer_dropout = 0.1,   # stochastic depth - dropout entire layer
-                attn_dropout = 0.1,    # dropout post-attention
-                ff_dropout = 0.1,      # feedforward dropout
+                # layer_dropout = 0.1,   # stochastic depth - dropout entire layer
+                # attn_dropout = 0.1,    # dropout post-attention
+                # ff_dropout = 0.1,      # feedforward dropout
             ),
         )
 
@@ -204,6 +204,13 @@ class XTModel(pl.LightningModule):
             betas=(self.config['beta1'], self.config['beta2']), 
             weight_decay=self.config['weight_decay'], 
             )
-        scheduler = CosineAnnealingLR(optimizer, T_max=self.config['num_epochs'], eta_min=self.config['learning_rate']/10)
+        
+        num_batches = self.config['num_batches'] // self.trainer.accumulate_grad_batches
+        scheduler = CosineAnnealingLR(optimizer, T_max=num_batches, eta_min=self.config['learning_rate'])
+        scheduler = {
+            'scheduler': scheduler,
+            'interval': 'step', # or 'epoch'
+            'frequency': 1
+            }
         
         return [optimizer], scheduler

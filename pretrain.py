@@ -78,7 +78,7 @@ if __name__ == '__main__':
         print(len(config['mask_ignore_token_ids']), config['mask_ignore_token_ids'])
 
     # finetune on rooted uspto50k
-    elif config['task'] == 'finetune_rootes_smiles':
+    elif 'rooted_smiles' in config['task']:
         config['data_dir'] = 'data/rooted'
         from trainer.uspto_finetune import XTModel
         from dataloader.rooted_smiles import RootedSmilesDataset
@@ -103,18 +103,31 @@ if __name__ == '__main__':
         config['mask_token_id'] = train_dataset.mask_token_id
         config['mask_ignore_token_ids'] = train_dataset.mask_ignore_token_ids
     
+    # finetune on levy uspto50k IFT
+    elif config['task'] == 'finetune_levy_ift':
+        config['data_dir'] = 'data/uspto_IFT'
+        from trainer.uspto_finetune import XTModel
+        from dataloader.levy_smiles_ift import USPTOIFT
+        train_dataset = USPTOIFT(config['data_dir'], 'train', config['batch_size']*config['validate_every'])
+        val_dataset   = USPTOIFT(config['data_dir'], 'val', config['batch_size']*config['validate_for'])
+        test_dataset  = USPTOIFT(config['data_dir'], 'test', config['batch_size']*config['validate_for'])
+        # config['vocab_size'] = train_dataset.vocab_size
+        config['pad_token_id'] = train_dataset.pad_token_id
+        config['mask_token_id'] = train_dataset.mask_token_id
+        config['mask_ignore_token_ids'] = train_dataset.mask_ignore_token_ids
+    
     else:
         raise NotImplementedError
         
     train_loader = DataLoader(
         train_dataset, batch_size=config['batch_size'], collate_fn=train_dataset.collate_fn,
-        shuffle=True if config['validate_every'] < 0 else False, num_workers=4, pin_memory=True, prefetch_factor=2)
+        shuffle=True if config['validate_every'] < 0 else False, num_workers=16)
     val_loader   = DataLoader(
         val_dataset, batch_size=config['batch_size'], collate_fn=val_dataset.collate_fn,
-        shuffle=False, num_workers=4, pin_memory=True, prefetch_factor=2)
+        shuffle=False, num_workers=16)
     test_loader  = DataLoader(
         test_dataset, batch_size=config['batch_size'], collate_fn=val_dataset.collate_fn,
-        shuffle=False, num_workers=4, pin_memory=True, prefetch_factor=2)
+        shuffle=False, num_workers=16)
     
     # train batches
     config['num_batches'] = len(train_loader) * config['num_epochs']
@@ -151,13 +164,15 @@ if __name__ == '__main__':
 
     if config["finetune"]:
         # model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))[0]
-        model_ckpt = sorted(glob(f"/scratch/arihanth.srikar/uspto50/pretrain-zinc/*.ckpt"))[0]
+        model_ckpt = sorted(glob(f"/scratch/arihanth.srikar/uspto50/pretrain-zinc-decode/*.ckpt"))[0]
+        # model_ckpt = sorted(glob(f"/scratch/arihanth.srikar/uspto50/pretrain-zinc-enc/*.ckpt"))[0]
 
         if config['train']:
-            trainer.fit(model, train_loader, val_loader, ckpt_path=model_ckpt)
+            model = XTModel.load_from_checkpoint(model_ckpt, config=config, token_encoder=train_dataset.token_encoder, token_decoder=train_dataset.token_decoder)
+            trainer.fit(model, train_loader, val_loader)
         else:
-            model_ckpt = sorted(glob(f"/scratch/arihanth.srikar/uspto50/finetune_rootes_smiles_dropout/*.ckpt"))[0]
-            trainer.validate(model, test_loader, ckpt_path=model_ckpt)
+            model_ckpt = sorted(glob(f"/scratch/arihanth.srikar/uspto50/train_scratch_levy_ift/*.ckpt"))[-1]
+            trainer.validate(model, val_loader, ckpt_path=model_ckpt)
             trainer.test(model, test_loader, ckpt_path=model_ckpt)
     
     else:
