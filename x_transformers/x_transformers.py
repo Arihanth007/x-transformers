@@ -200,7 +200,8 @@ class AbsolutePositionalEmbedding(nn.Module):
         if not exists(pos):
             pos = [torch.arange(seq_len, device = device)]
 
-        pos_emb = self.emb[0](pos[0][:, :seq_len]) * self.scale
+        pos_emb = self.emb[0](pos[0]) * self.scale
+        # pos_emb = self.emb[0](pos[0][:, :seq_len]) * self.scale
         for i, emb in enumerate(self.emb):
             if i == 0: 
                 continue

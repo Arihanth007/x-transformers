@@ -12,7 +12,7 @@ try:
     from pytorch_lightning.plugins import DeepSpeedPlugin
 except:
     from pytorch_lightning.strategies import DDPStrategy
-from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint, Callback
 
 try:
@@ -235,7 +235,8 @@ def load_tokeniser(vocab_path, chem_token_start):
 
 
 def build_trainer(args):
-    logger = TensorBoardLogger(args.log_dir, name=args.task)
+    # logger = TensorBoardLogger(args.log_dir, name=args.task)
+    logger = WandbLogger(project="uspto50", name="molbart", save_dir='/scratch/arihanth.srikar/')
     lr_monitor = LearningRateMonitor(logging_interval="step")
     checkpoint_cb = ModelCheckpoint(monitor="val_molecular_accuracy", save_last=True)
 
