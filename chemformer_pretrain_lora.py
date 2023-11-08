@@ -19,7 +19,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
-from x_transformers.x_transformers import TransformerWrapper, Encoder, Decoder
+from x_transformers.x_transformers_lora import TransformerWrapper, Encoder, Decoder
 from mlm_pytorch.mlm_pytorch.mlm_pytorch import MLM
 from x_transformers.autoregressive_wrapper import top_k, top_a, top_p, AutoregressiveWrapper
 
@@ -51,7 +51,7 @@ parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning 
 parser.add_argument('--beta1', type=float, default=0.9, help='beta1')
 parser.add_argument('--beta2', type=float, default=0.999, help='beta2')
 parser.add_argument('--weight_decay', type=float, default=1e-1, help='weight decay')
-parser.add_argument('--lr_scheduler', type=str, default='cosine', help='lr scheduler')
+parser.add_argument('--lr_scheduler', type=str, default='onecycle', help='lr scheduler')
 parser.add_argument('--dividing_factor', type=float, default=10000, help='dividing factor for lr scheduler')
 
 parser.add_argument('--data_dir', type=str, default='data/', help='data directory')
@@ -105,7 +105,7 @@ class Chemformer(pl.LightningModule):
                 rel_pos_bias = config['use_rel_pos_emb'],
                 ff_glu = True,
                 ff_no_bias = True,
-                attn_flash = True if not config['use_rel_pos_emb'] else False,
+                # attn_flash = True if not config['use_rel_pos_emb'] else False,
             ),
         )
 
@@ -133,9 +133,9 @@ class Chemformer(pl.LightningModule):
                 cross_attend = True,
                 ff_glu = True,
                 ff_no_bias = True,
-                # cross_residual_attn = True,
+                cross_residual_attn = True,
                 # shift_tokens = 1,
-                attn_flash = True if not config['use_rel_pos_emb'] else False,
+                # attn_flash = True if not config['use_rel_pos_emb'] else False,
                 # layer_dropout = 0.1,   # stochastic depth - dropout entire layer
                 # attn_dropout = 0.1,    # dropout post-attention
                 # ff_dropout = 0.1,      # feedforward dropout
@@ -153,6 +153,16 @@ class Chemformer(pl.LightningModule):
         # dont compile
         self.encoder = torch.compile(self.encoder) if config['is_compile'] else self.encoder
         self.decoder = torch.compile(self.decoder) if config['is_compile'] else self.decoder
+
+        # pretraining (freeze lora, train rest)
+        lora_params = 0
+        for n, p in self.named_parameters():
+            if 'lora_' in n:
+                p.requires_grad = False
+                lora_params += p.numel()
+            else:
+                p.requires_grad = True
+        print(f"Freezing {lora_params/1e6:.2f} parameters")
 
         self.save_hyperparameters()
 
@@ -278,7 +288,7 @@ class Chemformer(pl.LightningModule):
             lr_scheduler = CosineAnnealingLR(optimizer, T_max=self.config['num_steps'], eta_min=self.config['learning_rate']/50)
             lr_scheduler = GradualWarmupScheduler(optimizer, multiplier=1, total_epoch=self.config['num_steps']//10, after_scheduler=lr_scheduler)
         elif self.config['lr_scheduler'] == 'onecycle':
-            lr_scheduler = OneCycleLR(optimizer, max_lr=self.config['learning_rate'], total_steps=self.config['num_steps'], final_div_factor=self.config['dividing_factor'])
+            lr_scheduler = OneCycleLR(optimizer, max_lr=self.config['learning_rate'], total_steps=self.config['num_steps'])
         else:
             raise NotImplementedError
         
