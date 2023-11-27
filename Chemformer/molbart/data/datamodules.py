@@ -430,8 +430,8 @@ class FineTuneReactionDataModule(_AbsDataModule):
             collate_output = {
                 "encoder_input": prods_token_ids,
                 "encoder_pad_mask": prods_pad_mask,
-                "decoder_input": reacts_token_ids[:-1, :],
-                "decoder_pad_mask": reacts_pad_mask[:-1, :],
+                "decoder_input": reacts_token_ids,
+                "decoder_pad_mask": reacts_pad_mask,
                 "target": reacts_token_ids.clone()[1:, :],
                 "target_mask": reacts_pad_mask.clone()[1:, :],
                 "target_smiles": reacts_smiles

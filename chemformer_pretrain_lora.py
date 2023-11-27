@@ -24,7 +24,7 @@ from mlm_pytorch.mlm_pytorch.mlm_pytorch import MLM
 from x_transformers.autoregressive_wrapper import top_k, top_a, top_p, AutoregressiveWrapper
 
 import Chemformer.molbart.util as util
-from Chemformer.molbart.data.datasets import Uspto50
+from Chemformer.molbart.data.datasets import Uspto50, Uspto50Sike
 from Chemformer.molbart.data.datamodules import FineTuneReactionDataModule
 
 # disable rdkit warnings
@@ -162,7 +162,7 @@ class Chemformer(pl.LightningModule):
                 lora_params += p.numel()
             else:
                 p.requires_grad = True
-        print(f"Freezing {lora_params/1e6:.2f} parameters")
+        print(f"Freezing {lora_params/1e6:.2f}M parameters")
 
         self.save_hyperparameters()
 
@@ -196,14 +196,14 @@ class Chemformer(pl.LightningModule):
 
         products  = batch["encoder_input"].transpose(0, 1)
         reactants = batch["decoder_input"].transpose(0, 1)
-        src_mask  = products != model.config['pad_token_id']
+        src_mask  = products != self.config['pad_token_id']
 
-        _, enc, _ = model.encoder(products, mask=src_mask, return_logits_and_embeddings=True)
-        gen_seq = model.decoder.generate(reactants[:, :1], reactants.shape[1], context=enc, context_mask=src_mask, filter_logits_fn=top_k, filter_thres=0.999)
+        _, enc, _ = self.encoder(products, mask=src_mask, return_logits_and_embeddings=True)
+        gen_seq = self.decoder.generate(reactants[:, :1], reactants.shape[1], context=enc, context_mask=src_mask, filter_logits_fn=top_k, filter_thres=0.999)
 
-        prods  = [''.join([model.token_decode[t.item()] for t in prod if t.item() != model.config['pad_token_id']])[1:-1] for prod in products]
-        reacts = [''.join([model.token_decode[t.item()] for t in react if t.item() != model.config['pad_token_id']])[1:-1] for react in reactants]
-        gens   = [''.join([model.token_decode[t.item()] for t in gen if t.item() != model.config['pad_token_id']]) for gen in gen_seq]
+        prods  = [''.join([self.token_decode[t.item()] for t in prod if t.item() != self.config['pad_token_id']])[1:-1] for prod in products]
+        reacts = [''.join([self.token_decode[t.item()] for t in react if t.item() != self.config['pad_token_id']])[1:-1] for react in reactants]
+        gens   = [''.join([self.token_decode[t.item()] for t in gen if t.item() != self.config['pad_token_id']]) for gen in gen_seq]
 
         for i, (p, r, g) in enumerate(zip(prods, reacts, gens)):
             
@@ -311,6 +311,7 @@ if __name__ == '__main__':
 
     print("Reading dataset...")
     dataset = Uspto50('data/uspto50/uspto_50.pickle', 0.5, forward=False)
+    # dataset = Uspto50Sike('data/uspto50/uspto_50.pickle', 0.5, forward=False)
     print("Finished dataset.")
 
     print("Building data module...")
@@ -377,7 +378,7 @@ if __name__ == '__main__':
         dm.setup('placeholder')
 
         device = 'cuda:2'
-        model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))[0]
+        model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))[-1]
         model = Chemformer.load_from_checkpoint(model_ckpt, config=config)
         print(f"Loaded model from {model_ckpt}")
         model = model.to(device)

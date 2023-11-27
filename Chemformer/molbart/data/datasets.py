@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 from torch.utils.data import Dataset
 from pysmilesutils.augment import MolAugmenter
+from Levy.levenshteinaugment.levenshtein import Levenshtein_augment
 
 
 class _AbsDataset(Dataset):
@@ -150,6 +151,74 @@ class Uspto50(ReactionDataset):
     def _prepare_strings(self, react, prod, type_token):
         react_str = self._augment_to_smiles(react)
         prod_str = self._augment_to_smiles(prod)
+
+        if self.forward:
+            react_str = f"{str(type_token)}{react_str}" if self.type_token else react_str
+        else:
+            prod_str = f"{str(type_token)}{prod_str}" if self.type_token else prod_str
+
+        return react_str, prod_str
+
+
+class UsptoFinetune(ReactionDataset):
+    def __init__(self, data_path, aug_prob, type_token=False, forward=True):
+        path = Path(data_path)
+        df = pd.read_pickle(path)
+        reactants = df["reactants_mol"].tolist()
+        products = df["products_mol"].tolist()
+        type_tokens = df["IFT"].tolist()
+
+        super().__init__(reactants, products, items=type_tokens, transform=self._prepare_strings, aug_prob=aug_prob)
+
+        self.type_token = type_token
+        self.forward = forward
+        self.train_idxs, self.val_idxs, self.test_idxs = self._save_idxs(df)
+
+    def _prepare_strings(self, react, prod, type_token):
+        react_str = self._augment_to_smiles(react)
+        prod_str = self._augment_to_smiles(prod)
+
+        if self.forward:
+            react_str = f"{str(type_token)}{react_str}" if self.type_token else react_str
+        else:
+            prod_str = f"{str(type_token)}{prod_str}" if self.type_token else prod_str
+
+        return react_str, prod_str
+
+
+class Uspto50Sike(ReactionDataset):
+    def __init__(self, data_path, aug_prob, type_token=False, forward=True):
+        path = Path(data_path)
+        df = pd.read_pickle(path)
+        reactants = df["reactants_mol"].tolist()
+        products = df["products_mol"].tolist()
+        type_tokens = df["reaction_type"].tolist()
+
+        super().__init__(reactants, products, items=type_tokens, transform=self._prepare_strings, aug_prob=aug_prob)
+
+        self.type_token = type_token
+        self.forward = forward
+        self.train_idxs, self.val_idxs, self.test_idxs = self._save_idxs(df)
+        self.my_augmenter = Levenshtein_augment(source_augmentation=1, randomization_tries=1000)
+
+    def sike_augment(self, reactant, product):
+        new_reactants, new_products, all_score = [], [], []
+
+        pairs = self.my_augmenter.levenshtein_pairing(reactant, product)
+        augmentations = self.my_augmenter.sample_pairs(pairs)
+
+        for new_reactant, new_product, score in augmentations:
+            new_reactants.append(new_reactant)
+            new_products.append(new_product)
+            all_score.append(score)
+        
+        return new_reactants, new_products, all_score
+
+    def _prepare_strings(self, react, prod, type_token):
+        react_str = self._augment_to_smiles(react)
+        prod_str = self._augment_to_smiles(prod)
+        prod_str, react_str, score = self.sike_augment(prod_str, react_str)
+        react_str, prod_str = react_str[0], prod_str[0]
 
         if self.forward:
             react_str = f"{str(type_token)}{react_str}" if self.type_token else react_str

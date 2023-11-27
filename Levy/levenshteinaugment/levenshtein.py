@@ -51,9 +51,10 @@ class Levenshtein_augment():
     def levenshtein_pairing(self, in_smiles, out_smiles):
         """performs randomizations of lists and finds the target sequence most similar to the input sequences"""
         #TODO make larger number of tries for in randomizations + sampling of set to make chance of getting different SMILES higher for small molecules
-        in_randomizations  = self.randomize_smiles(in_smiles, self.randomization_tries)
+        # in_randomizations  = self.randomize_smiles(in_smiles, self.randomization_tries)[0:self.source_augmentation]
         out_randomizations = self.randomize_smiles(out_smiles, self.randomization_tries)
-        in_randomizations  = [in_smiles] + in_randomizations
+        # in_randomizations  = [in_smiles] + in_randomizations
+        in_randomizations  = [in_smiles]
         out_randomizations = [out_smiles] + out_randomizations
 
         pairs = []
