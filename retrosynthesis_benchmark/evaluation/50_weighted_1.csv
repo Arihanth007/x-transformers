@@ -1,0 +1,51 @@
+,reactants_mol,products_mol,reaction_type,set,num_reacts,num_prods,ratio,log_ratio,reaction_template
+21122,"['CC(C)N=C=O', 'c1nc2c([nH]1)CCNC2']",CC(C)NC(=O)N1CCc2[nH]cnc2C1,<RX_2>,train,2,1,1.0,0.0,2
+6407,"['CN(C)C=O', 'NC(=O)c1c(F)ccc(OCc2nc3cc(Br)ccc3s2)c1F']",C=CCc1ccc2sc(COc3ccc(F)c(C(N)=O)c3F)nc2c1,<RX_3>,train,2,1,1.12,0.11332868530700327,3
+13430,"['CCn1c(-c2nonc2N)nc2cnc(Oc3cccc(N)c3)cc21', 'O=C(O)c1ccc(OCCN2CCOCC2)cc1']",CCn1c(-c2nonc2N)nc2cnc(Oc3cccc(NC(=O)c4ccc(OCCN5CCOCC5)cc4)c3)cc21,<RX_2>,train,2,1,1.0238095238095237,0.023530497410194036,2
+27055,['COC(=O)CCCCc1nc(-c2ccccc2OC)no1'],COc1ccccc1-c1noc(CCCCC(=O)O)n1,<RX_6>,train,1,1,1.05,0.04879016416943205,6
+20172,"['CCNCC', 'COC(=O)c1cc(CBr)cc(C)c1N(Cc1ccccc1)S(=O)(=O)c1ccc(OC)cc1']",CCN(CC)Cc1cc(C)c(N(Cc2ccccc2)S(=O)(=O)c2ccc(OC)cc2)c(C(=O)OC)c1,<RX_1>,train,2,1,1.0277777777777777,0.027398974188114347,1
+23364,['O=C(O)c1cccc2[nH]c(=S)sc12'],OCc1cccc2[nH]c(=S)sc12,<RX_7>,train,1,1,1.0833333333333333,0.08004270767353636,7
+40444,['COCC1(C(=O)Nc2cccc(OC(=O)N(C)C)c2)CCN(C(=O)OC(C)(C)C)CC1'],COCC1(C(=O)Nc2cccc(OC(=O)N(C)C)c2)CCNCC1,<RX_6>,valid,1,1,1.2916666666666667,0.2559333741372007,6
+1071,"['CCCNCCSc1ccc(OCC(=O)OCC)c(C)c1', 'Cc1c(S(=O)(=O)Cl)sc2ccc(C(F)(F)F)cc12']",CCCN(CCSc1ccc(OCC(=O)OCC)c(C)c1)S(=O)(=O)c1sc2ccc(C(F)(F)F)cc2c1C,<RX_2>,train,2,1,1.0263157894736843,0.025975486403260736,2
+24593,"['CC(C)(C)OC(=O)N1CCC(CCCO)CC1', 'Clc1ccncc1']",CC(C)(C)OC(=O)N1CCC(CCCOc2ccncc2)CC1,<RX_1>,train,2,1,1.0434782608695652,0.0425596144187959,1
+14833,"['Ic1ccc(-c2ccccc2)cc1', 'Nc1ccc(-c2ccccc2)cc1-c1ccccc1']",c1ccc(-c2ccc(Nc3ccc(-c4ccccc4)cc3-c3ccccc3)cc2)cc1,<RX_1>,train,2,1,1.032258064516129,0.03174869831458027,1
+1867,"['C=CCOC(=O)N1C[C@@H](C(C)(C)C)C[C@@]1(C=O)O[SiH](C)C', 'COC(=O)C=P(c1ccccc1)(c1ccccc1)c1ccccc1']",C=CCOC(=O)N1C[C@@H](C(C)(C)C)C[C@@]1(C=CC(=O)OC)O[SiH](C)C,<RX_3>,train,2,1,1.8,0.5877866649021191,3
+34579,"['CCCBr', 'Cc1cc(C)c2c(c1)C1CNCCC1CC2=O']",CCCN1CCC2CC(=O)c3c(C)cc(C)cc3C2C1,<RX_1>,train,2,1,1.05,0.04879016416943205,1
+40045,['Cc1cccc(S(=O)(=O)N2C[C@H](C)Oc3ncc(NC(=O)OC(C)(C)C)cc32)c1'],Cc1cccc(S(=O)(=O)N2C[C@H](C)Oc3ncc(N)cc32)c1,<RX_6>,valid,1,1,1.3181818181818181,0.27625337662815813,6
+8924,"['Cc1cc(Br)c(N)c(Br)c1', 'N#Cc1ccc(Nc2nccc(Cl)n2)cc1']",Cc1cc(Br)c(Nc2ccnc(Nc3ccc(C#N)cc3)n2)c(Br)c1,<RX_1>,train,2,1,1.04,0.03922071315328133,1
+4965,"['CCCCCC(=O)Cl', 'NS(=O)(=O)c1ccccc1NC(=O)c1cccc(OCc2ccccc2)c1']",CCCCCC(=O)NS(=O)(=O)c1ccccc1NC(=O)c1cccc(OCc2ccccc2)c1,<RX_2>,train,2,1,1.0294117647058822,0.028987536873252187,2
+29751,['COc1cc(CCN2CCCC2)ccc1[N+](=O)[O-]'],COc1cc(CCN2CCCC2)ccc1N,<RX_7>,train,1,1,1.125,0.11778303565638346,7
+4469,['COC(=O)c1cccc(Cn2c(C)c(C)c3cc(C(=O)N[C@@H](C)c4cccc(C5CC5)c4)ccc32)c1'],Cc1c(C)n(Cc2cccc(C(=O)O)c2)c2ccc(C(=O)N[C@@H](C)c3cccc(C4CC4)c3)cc12,<RX_6>,train,1,1,1.0285714285714285,0.028170876966696224,6
+41122,['ON=C1CCc2oc3ccccc3c21'],O=C1NCCc2oc3ccccc3c21,<RX_4>,valid,1,1,1.0,0.0,4
+47658,['[N-]=[N+]=N[C@@H]1CO[C@H]2c3cc(F)ccc3Cc3ccccc3[C@H]2C1'],N[C@@H]1CO[C@H]2c3cc(F)ccc3Cc3ccccc3[C@H]2C1,<RX_9>,test,1,1,1.0952380952380953,0.09097177820572679,9
+27657,"['Cc1cc(-c2cn(CC3CN(C)C3)c(C3CCNCC3)n2)ccc1F', 'Nc1ncnc(Cl)c1Cl']",Cc1cc(-c2cn(CC3CN(C)C3)c(C3CCN(c4ncnc(N)c4Cl)CC3)n2)ccc1F,<RX_1>,train,2,1,1.0303030303030303,0.02985296314968113,1
+25854,['O=C1CCc2cc([N+](=O)[O-])ccc2N1CCCN1CCCC1'],Nc1ccc2c(c1)CCC(=O)N2CCCN1CCCC1,<RX_7>,train,1,1,1.1,0.09531017980432493,7
+35794,['CC(C)(C)OC(=O)N1CCC(C=O)CC1'],CC(C)(C)OC(=O)N1CCC(CO)CC1,<RX_7>,train,1,1,1.0,0.0,7
+38509,"['BrCc1ccccc1', 'COC(=O)c1cc([N+](=O)[O-])c(O)cc1C']",COC(=O)c1cc([N+](=O)[O-])c(OCc2ccccc2)cc1C,<RX_1>,train,2,1,1.0454545454545454,0.044451762570833796,1
+22995,"['CC(C)(C)OC(=O)NCCC1CCNCC1', 'N#Cc1ccc(-c2cnc3ccc(-c4ccc(C(=O)O)cc4)cn23)cc1']",CC(C)(C)OC(=O)NCCC1CCN(C(=O)c2ccc(-c3ccc4ncc(-c5ccc(C#N)cc5)n4c3)cc2)CC1,<RX_2>,train,2,1,1.024390243902439,0.024097551579060524,2
+27711,"['CC(C)(O)Cn1ccc(NC(=O)C(CC2CCCC2)n2ncc(Sc3ccccc3)cc2=O)n1', 'O=C(OO)c1cccc(Cl)c1']",CC(C)(O)Cn1ccc(NC(=O)C(CC2CCCC2)n2ncc(S(=O)c3ccccc3)cc2=O)n1,<RX_8>,train,2,1,1.2857142857142858,0.25131442828090617,8
+25188,"['CN(Cc1ccc(Br)cn1)C1CCN(C(=O)OC(C)(C)C)CC1', 'N#Cc1ccc(B(O)O)cc1']",CN(Cc1ccc(-c2ccc(C#N)cc2)cn1)C1CCN(C(=O)OC(C)(C)C)CC1,<RX_3>,train,2,1,1.1333333333333333,0.125163142954006,3
+6158,"['CC(C)(C)OC(=O)Nc1ccc(I)cc1[N+](=O)[O-]', 'OB(O)c1ccc(F)cc1']",CC(C)(C)OC(=O)Nc1ccc(-c2ccc(F)cc2)cc1[N+](=O)[O-],<RX_3>,train,2,1,1.1666666666666667,0.15415067982725836,3
+44398,"['CCCCc1ccc(N)cc1', 'NC(=O)c1[nH]c2ccc(C=O)cc2c1Sc1ccccc1']",CCCCc1ccc(NCc2ccc3[nH]c(C(N)=O)c(Sc4ccccc4)c3c2)cc1,<RX_1>,valid,2,1,1.032258064516129,0.03174869831458027,1
+2772,"['NCc1cc(N)nc(N)c1', 'O=C(O)C1CCCC1']",Nc1cc(CNC(=O)C2CCCC2)cc(N)n1,<RX_2>,train,2,1,1.0588235294117647,0.05715841383994862,2
+44313,"['COc1ccc(COC(=O)c2ccc(O)cc2)cc1', 'OCCBr']",COc1ccc(COC(=O)c2ccc(OCCO)cc2)cc1,<RX_1>,valid,2,1,1.0454545454545454,0.044451762570833796,1
+30142,['COC(=O)C(C)(CO)C(c1ccccc1)c1ccc2c(cnn2-c2ccc(F)cc2)c1'],CC(CO)(C(=O)O)C(c1ccccc1)c1ccc2c(cnn2-c2ccc(F)cc2)c1,<RX_6>,train,1,1,1.0333333333333334,0.03278982282299097,6
+33962,"['CCc1ccc(Nc2c(C)cc(Cl)cc2Cl)cc1', 'O=C(Cl)CCl']",CCc1ccc(N(C(=O)CCl)c2c(C)cc(Cl)cc2Cl)cc1,<RX_2>,train,2,1,1.0454545454545454,0.044451762570833796,2
+738,['CCCCCCCCC(NC1CSc2ccccc2N(CC(=O)OC(C)(C)C)C1=O)C(=O)OCC'],CCCCCCCCC(NC1CSc2ccccc2N(CC(=O)O)C1=O)C(=O)OCC,<RX_6>,train,1,1,1.1290322580645162,0.12136085700426753,6
+38329,"['C1CCNC1', 'NC(=O)c1cc(-c2ccccc2)cc2c(C3CCN(S(=O)(=O)CCCCl)CC3)c[nH]c12']",NC(=O)c1cc(-c2ccccc2)cc2c(C3CCN(S(=O)(=O)CCCN4CCCC4)CC3)c[nH]c12,<RX_1>,train,2,1,1.0285714285714285,0.028170876966696224,1
+11783,"['NCc1ccco1', 'O=C(O)c1ccc2[nH]c(COc3ccc(C45CC6CC(CC(C6)C4)C5)cc3)nc2c1']",O=C(NCc1ccco1)c1ccc2[nH]c(COc3ccc(C45CC6CC(CC(C6)C4)C5)cc3)nc2c1,<RX_2>,train,2,1,1.0277777777777777,0.027398974188114347,2
+23005,"['COCCc1cc2ccccc2n1-c1ccc(O)cc1', 'ClCCCN1CCCC1']",COCCc1cc2ccccc2n1-c1ccc(OCCCN2CCCC2)cc1,<RX_1>,train,2,1,1.0357142857142858,0.03509131981127019,1
+6820,"['CN1C(=O)N(c2ncc(F)cn2)CC1C(=O)O', 'NCc1ccc(Cl)cc1Cl']",CN1C(=O)N(c2ncc(F)cn2)CC1C(=O)NCc1ccc(Cl)cc1Cl,<RX_2>,train,2,1,1.0384615384615385,0.03774032798284711,2
+5532,"['CC(C)Oc1cc(-n2ncc(=O)[nH]c2=O)c(Cl)cc1Cl', 'CI']",CC(C)Oc1cc(-n2ncc(=O)n(C)c2=O)c(Cl)cc1Cl,<RX_1>,train,2,1,1.0476190476190477,0.04652001563489291,1
+17795,"['COC(=O)c1cc(N2CCOCC2)nc(Cl)n1', 'OB(O)c1ccccc1']",COC(=O)c1cc(N2CCOCC2)nc(-c2ccccc2)n1,<RX_3>,train,2,1,1.1818181818181819,0.16705408466316624,3
+47341,['CCCCOC(=O)N1CCN(C(=O)[C@H](CCC(=O)OC(C)(C)C)NC(=O)c2cc(OCC(=O)N3CCC[C@H]3C(=O)OCc3ccccc3)n(-c3ccccc3)n2)CC1'],CCCCOC(=O)N1CCN(C(=O)[C@H](CCC(=O)OC(C)(C)C)NC(=O)c2cc(OCC(=O)N3CCC[C@H]3C(=O)O)n(-c3ccccc3)n2)CC1,<RX_6>,test,1,1,1.1372549019607843,0.12861737782209354,6
+33636,"['C#CCCC(=O)Nc1ncccc1C#N', 'Cc1cccc(I)c1']",Cc1cccc(C#CCCC(=O)Nc2ncccc2C#N)c1,<RX_3>,train,2,1,1.0454545454545454,0.044451762570833796,3
+45992,"['CC(C)CNNC(=O)[C@H](CC(C)C)[C@H](C/C=C/c1ccccc1)C(=O)OC(C)(C)C', 'O=C(OC(=O)C(F)(F)F)C(F)(F)F']",CC(C)C[C@@H](C(=O)NN(CC(C)C)C(=O)C(F)(F)F)[C@H](C/C=C/c1ccccc1)C(=O)OC(C)(C)C,<RX_5>,test,2,1,1.1944444444444444,0.17768117723745241,5
+5295,"['Cc1cc(Cl)ccc1C(CC(=O)c1ccc(=O)n(C)c1)c1ccc(NS(=O)(=O)C2CC2)cc1', 'NO']",Cc1cc(Cl)ccc1C(C/C(=N\O)c1ccc(=O)n(C)c1)c1ccc(NS(=O)(=O)C2CC2)cc1,<RX_9>,train,2,1,1.0294117647058822,0.028987536873252187,9
+17428,"['CN1CCN(c2ccccc2)CC1CN', 'CS(=O)(=O)Nc1ccc(C(=O)Cl)cc1']",CN1CCN(c2ccccc2)CC1CNC(=O)c1ccc(NS(C)(=O)=O)cc1,<RX_2>,train,2,1,1.0357142857142858,0.03509131981127019,2
+33985,"['NC1CC1', 'O=Cc1cc(Br)cc(Br)c1']",Brc1cc(Br)cc(CNC2CC2)c1,<RX_1>,train,2,1,1.0769230769230769,0.07410797215372183,1
+26637,"['CN1CCCn2c1cc(Cl)nc2=O', 'N#Cc1cc(F)cc(CO)c1']",CN1CCCn2c1cc(OCc1cc(F)cc(C#N)c1)nc2=O,<RX_1>,train,2,1,1.0434782608695652,0.0425596144187959,1
+2178,['Cc1cc(C)cc(-c2c(OCCC3CCCCN3C(=O)OC(C)(C)C)c3cc([N+](=O)[O-])c(Cl)cc3n(C)c2=O)c1'],Cc1cc(C)cc(-c2c(OCCC3CCCCN3)c3cc([N+](=O)[O-])c(Cl)cc3n(C)c2=O)c1,<RX_6>,train,1,1,1.2121212121212122,0.1923718926474561,6
+27519,"['C=CCCCCC(=O)O', 'C=CCC[C@@H](C)C[C@H](NC(=O)[C@H](C)NC)[C@H](O)CCl']",C=CCCCCC(=O)N(C)[C@@H](C)C(=O)N[C@@H](C[C@H](C)CCC=C)[C@H](O)CCl,<RX_2>,train,2,1,1.037037037037037,0.03636764417087479,2
+19102,"['CC(C)(C)CC(=O)Cl', 'CC(O)c1ccc([C@H]2C[C@@]3(C)[C@@H](CC[C@@]3(O)C(F)(F)C(F)(F)F)[C@@H]3CCC4=CC(=O)CCC4=C32)cc1']",CC(OC(=O)CC(C)(C)C)c1ccc([C@H]2C[C@@]3(C)[C@@H](CC[C@@]3(O)C(F)(F)C(F)(F)F)[C@@H]3CCC4=CC(=O)CCC4=C32)cc1,<RX_2>,train,2,1,1.0232558139534884,0.02298951822469878,2
+48271,"['CN(C)CCN', 'O=[N+]([O-])c1cc(-c2nc3ccccc3o2)ccc1F']",CN(C)CCNc1ccc(-c2nc3ccccc3o2)cc1[N+](=O)[O-],<RX_1>,test,2,1,1.0416666666666667,0.0408219945202552,1

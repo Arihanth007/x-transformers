@@ -1,0 +1,51 @@
+,reactants_mol,products_mol,reaction_type,set,num_reacts,num_prods,ratio,log_ratio,reaction_template
+11222,['CC(C)C[C@@H](CO[Si](C)(C)C(C)(C)C)N[C@@H](c1ccc(Br)cc1)C(F)F'],CC(C)C[C@@H](CO)N[C@@H](c1ccc(Br)cc1)C(F)F,<RX_6>,train,1,1,1.368421052631579,0.3136575588550416,6
+16311,['COC(=O)[C@H]1CC[C@H](C(=O)N(C)CCN(C)C)CC1'],CN(C)CCN(C)C(=O)[C@H]1CC[C@H](C(=O)O)CC1,<RX_6>,train,1,1,1.0555555555555556,0.05406722127027579,6
+9894,"['Fc1cccc(CBr)c1', 'N#Cc1c(N2CCN(C(=O)c3ccco3)CC2)c2cc(Cl)cnc2[nH]c1=O']",N#Cc1c(N2CCN(C(=O)c3ccco3)CC2)c2cc(Cl)cnc2n(Cc2cccc(F)c2)c1=O,<RX_1>,train,2,1,1.0285714285714285,0.028170876966696224,1
+5447,"['COC(=O)Cl', 'NC[C@H]1CN(c2cc(F)c(N3CCC(n4ncnn4)CC3)c(F)c2)C(=O)O1']",COC(=O)NC[C@H]1CN(c2cc(F)c(N3CCC(n4ncnn4)CC3)c(F)c2)C(=O)O1,<RX_2>,train,2,1,1.032258064516129,0.03174869831458027,2
+40247,"['CNCc1ccccc1', 'ClCCCBr']",CN(CCCCl)Cc1ccccc1,<RX_1>,valid,2,1,1.0769230769230769,0.07410797215372183,1
+27619,"['BrCc1ccccc1', 'CC(=O)c1cc(C)c(Br)cc1O']",CC(=O)c1cc(C)c(Br)cc1OCc1ccccc1,<RX_1>,train,2,1,1.0526315789473684,0.05129329438755048,1
+21638,"['CN', 'N#Cc1ccc(C=O)cc1']",CNCc1ccc(C#N)cc1,<RX_1>,train,2,1,1.0909090909090908,0.0870113769896297,1
+18728,"['CCCCCS(N)(=O)=O', 'Cc1cnc2c(ccn2-c2c(/C=C/C(=O)O)c(C)nn2C)c1']",CCCCCS(=O)(=O)NC(=O)/C=C/c1c(C)nn(C)c1-n1ccc2cc(C)cnc21,<RX_2>,train,2,1,1.0333333333333334,0.03278982282299097,2
+47345,"['COCCBr', 'O=[N+]([O-])c1cccc(O)c1']",COCCOc1cccc([N+](=O)[O-])c1,<RX_1>,test,2,1,1.0714285714285714,0.06899287148695142,1
+13894,"['CC(C)(C)OC(=O)N1CCCC(c2cc(-c3c(O)cccc3O)nc(N)n2)C1', 'CCI']",CCOc1cccc(O)c1-c1cc(C2CCCN(C(=O)OC(C)(C)C)C2)nc(N)n1,<RX_1>,train,2,1,1.0333333333333334,0.03278982282299097,1
+23941,['CCOC(=O)[C@@H]1CC(CCCN=[N+]=[N-])CN1C(=O)OC(C)(C)C'],CCOC(=O)[C@@H]1CC(CCCN)CN1C(=O)OC(C)(C)C,<RX_9>,train,1,1,1.0952380952380953,0.09097177820572679,9
+24845,['COc1ccc(-c2ccc(C(C)=O)cc2C)cc1'],CC(=O)c1ccc(-c2ccc(O)cc2)c(C)c1,<RX_6>,train,1,1,1.0588235294117647,0.05715841383994862,6
+13177,"['Nc1ccc(C(F)(F)F)cc1O', 'O=C=Nc1ccccc1Br']",O=C(Nc1ccc(C(F)(F)F)cc1O)Nc1ccccc1Br,<RX_2>,train,2,1,1.0,0.0,2
+1002,"['CC(C)(C)OC(=O)NCC=O', 'CC(C)(C)OC(=O)Nc1nc(/C(=N/OC(C)(C)C(=O)OC(C)(C)C)C(=O)N[C@@H]2C(=O)N[C@@H]2CNCCN)cs1']",CC(C)(C)OC(=O)NCCNCCNC[C@H]1NC(=O)[C@H]1NC(=O)/C(=N\OC(C)(C)C(=O)OC(C)(C)C)c1csc(NC(=O)OC(C)(C)C)n1,<RX_1>,train,2,1,1.0204081632653061,0.02020270731751947,1
+15492,"['CC(C)(C)OC(=O)C=C(CCCCCCc1ccc2c(n1)NCCC2)OS(=O)(=O)C(F)(F)F', 'OB(O)c1ccccc1']",CC(C)(C)OC(=O)C=C(CCCCCCc1ccc2c(n1)NCCC2)c1ccccc1,<RX_3>,train,2,1,1.3548387096774193,0.303682413798222,3
+21778,['CC(C)(C)OC(=O)NCCSc1ccc(C#N)cn1'],O=C(O)C(F)(F)F,<RX_6>,train,1,1,2.7142857142857144,0.9985288301111273,6
+47832,"['C=C(Cl)Cl', 'O=C(Cl)c1cc(F)c(F)cc1F']",O=C(C=C(Cl)Cl)c1cc(F)c(F)cc1F,<RX_3>,test,2,1,1.0666666666666667,0.06453852113757116,3
+7691,['CC(=O)Nc1cccc(-c2nc(C)c(CO)[nH]2)c1'],CC(=O)Nc1cccc(-c2nc(C)c(C=O)[nH]2)c1,<RX_8>,train,1,1,1.0,0.0,8
+8397,"['CC(C)(C)OC(=O)OC(=O)OC(C)(C)C', 'Clc1ncnc2[nH]ccc12']",CC(C)(C)OC(=O)n1ccc2c(Cl)ncnc21,<RX_5>,train,2,1,1.4705882352941178,0.38566248081198473,5
+25045,"['CCNC(=O)c1cc(-c2cc(Br)c(OCc3ccccc3)cc2OCc2ccccc2)on1', 'OB(O)/C=C/c1ccccc1']",CCNC(=O)c1cc(-c2cc(C=Cc3ccccc3)c(OCc3ccccc3)cc2OCc2ccccc2)on1,<RX_3>,train,2,1,1.1,0.09531017980432493,3
+20294,"['C#CCN(C)C', 'CCCn1cnc2c1c(=O)n(CCC(C)=O)c(=O)n2C']",CCCn1cnc2c1c(=O)n(CCC(C)(O)C#CCN(C)C)c(=O)n2C,<RX_3>,train,2,1,1.0,0.0,3
+38095,"['N', 'O=C1CCC(=Cc2cccc(Oc3ccc(C(F)(F)F)c(Cl)n3)c2)CC1']",NC1CCC(=Cc2cccc(Oc3ccc(C(F)(F)F)c(Cl)n3)c2)CC1,<RX_1>,train,2,1,1.0384615384615385,0.03774032798284711,1
+37961,"['CC1NC(C)(C)N(CC(N)=O)C1=O', 'O=C(O)CNC(=O)OCc1ccccc1']",CC1C(=O)N(CC(N)=O)C(C)(C)N1C(=O)CNC(=O)OCc1ccccc1,<RX_2>,train,2,1,1.037037037037037,0.03636764417087479,2
+26902,"['CC(C)(C)c1cc(SC2CCNCC2)cc(C(C)(C)C)c1O', 'CCOC(=O)c1cnc(S(=O)(=O)Cl)[nH]1']",CCOC(=O)c1cnc(S(=O)(=O)N2CCC(Sc3cc(C(C)(C)C)c(O)c(C(C)(C)C)c3)CC2)[nH]1,<RX_2>,train,2,1,1.0285714285714285,0.028170876966696224,2
+10913,['COc1cc(C(=O)N(C(C)C)C(C)C)ccc1OC(C)=O'],COc1cc(C(=O)N(C(C)C)C(C)C)ccc1O,<RX_6>,train,1,1,1.1666666666666667,0.15415067982725836,6
+2102,['CCc1nc2c(C)cc(C)nc2n1Cc1cnc(N(C(=O)OC(C)(C)C)c2ccccc2)nc1'],CCc1nc2c(C)cc(C)nc2n1Cc1cnc(Nc2ccccc2)nc1,<RX_6>,train,1,1,1.2592592592592593,0.23052365861183235,6
+19120,"['COc1ccc(-c2csc(N)n2)cc1', 'N#Cc1ccc(CC(=O)O)cc1']",COc1ccc(-c2csc(NC(=O)Cc3ccc(C#N)cc3)n2)cc1,<RX_2>,train,2,1,1.04,0.03922071315328133,2
+39431,"['COC1CCN([C@@H]2CCC[C@H]2N)CC1', 'COc1cc(C(=O)Cl)ccc1Cl']",COc1cc(C(=O)N[C@@H]2CCC[C@H]2N2CCC(OC)CC2)ccc1Cl,<RX_2>,train,2,1,1.04,0.03922071315328133,2
+24610,"['CN', 'O=C(Cl)c1cccc([N+](=O)[O-])c1']",CNC(=O)c1cccc([N+](=O)[O-])c1,<RX_2>,train,2,1,1.0769230769230769,0.07410797215372183,2
+26713,['COc1ccc(C(=O)OC[C@@H](CO[Si](C)(C)C(C)(C)C)O[Si](C)(C)C(C)(C)C)cc1'],CC(C)(C)[Si](C)(C)OC[C@H](CO)O[Si](C)(C)C(C)(C)C,<RX_7>,train,1,1,1.5,0.4054651081081644,7
+19520,"['C1=COCCC1', 'CC(=O)c1cc(O)ccc1O']",CC(=O)c1cc(OC2CCCCO2)ccc1O,<RX_1>,train,2,1,1.0,0.0,1
+11483,['CC(C)(C)OC(=O)NC1CN(C(c2ccccc2)c2ccccc2)C1'],CC(C)(C)OC(=O)NC1CNC1,<RX_6>,train,1,1,2.0833333333333335,0.7339691750802005,6
+11098,"['CC1(C)C=Cc2c(O)c(C=O)cc([N+](=O)[O-])c2O1', 'CI']",COc1c(C=O)cc([N+](=O)[O-])c2c1C=CC(C)(C)O2,<RX_1>,train,2,1,1.0526315789473684,0.05129329438755048,1
+37909,"['COC(=O)c1ccc2[nH]cc(CCCCCl)c2c1', 'c1cc2c(cc1N1CCNCC1)OCCO2']",COC(=O)c1ccc2[nH]cc(CCCCN3CCN(c4ccc5c(c4)OCCO5)CC3)c2c1,<RX_1>,train,2,1,1.0303030303030303,0.02985296314968113,1
+38534,['Cc1nc2n(c1CN1C(=O)c3ccccc3C1=O)-c1ccc(Cl)cc1C(c1ccccc1Cl)=NC2'],Cc1nc2n(c1CN)-c1ccc(Cl)cc1C(c1ccccc1Cl)=NC2,<RX_6>,train,1,1,1.4,0.3364722366212129,6
+41255,"['CN1CCN(C(=O)c2cccc(B3OC(C)(C)C(C)(C)O3)c2)CC1', 'COc1cc(-c2cc3nccc(Cl)c3o2)cc(OC)c1OC']",COc1cc(-c2cc3nccc(-c4cccc(C(=O)N5CCN(C)CC5)c4)c3o2)cc(OC)c1OC,<RX_3>,valid,2,1,1.2777777777777777,0.2451224580329849,3
+22667,"['CSc1nc(N)c([N+](=O)[O-])c(Cl)n1', 'O=S1CCNCC1']",CSc1nc(N)c([N+](=O)[O-])c(N2CCS(=O)CC2)n1,<RX_1>,train,2,1,1.0526315789473684,0.05129329438755048,1
+21609,"['C=CCCN1C(=O)C(C)(C)Oc2cc(C(F)(F)F)c(C(=O)N(C(C)C)[C@@H]3CCCN(C(=O)OC(C)(C)C)C3)cc21', 'O=C(OO)c1cccc(Cl)c1']",CC(C)N(C(=O)c1cc2c(cc1C(F)(F)F)OC(C)(C)C(=O)N2CCC1CO1)[C@@H]1CCCN(C(=O)OC(C)(C)C)C1,<RX_4>,train,2,1,1.2439024390243902,0.21825356602001797,4
+49919,"['COC(=O)[C@@H](N)Cc1ccc(-c2c(C(F)(F)F)cc(C)n(C)c2=O)cc1', 'O=C(Cl)c1c(Cl)cccc1Cl']",COC(=O)[C@H](Cc1ccc(-c2c(C(F)(F)F)cc(C)n(C)c2=O)cc1)NC(=O)c1c(Cl)cccc1Cl,<RX_2>,test,2,1,1.0277777777777777,0.027398974188114347,2
+23871,"['Clc1ccnc(Cl)c1Br', 'N[C@H]1CC[C@@H](c2ccccc2)CC1']",Clc1nccc(N[C@H]2CC[C@@H](c3ccccc3)CC2)c1Br,<RX_1>,train,2,1,1.0476190476190477,0.04652001563489291,1
+25529,"['CN(C)C=O', 'Fc1cc2cc[nH]c2cc1F']",O=Cc1c[nH]c2cc(F)c(F)cc12,<RX_3>,train,2,1,1.2307692307692308,0.20763936477824455,3
+22519,['Cc1c(N=O)c(-c2ccccc2)nn1CC(F)(F)F'],Cc1c(N)c(-c2ccccc2)nn1CC(F)(F)F,<RX_7>,train,1,1,1.0555555555555556,0.05406722127027579,7
+41727,"['NNc1ccc(-c2cnco2)cc1', 'O=Cc1ccc(O)cc1']",Oc1ccc(C=NNc2ccc(-c3cnco3)cc2)cc1,<RX_1>,valid,2,1,1.0476190476190477,0.04652001563489291,1
+44345,"['O=C(O)CC(c1ccc(Cl)cc1)c1ccc(Br)cc1', 'O=C(n1ccnc1)n1ccnc1']",NC(=O)CC(c1ccc(Cl)cc1)c1ccc(Br)cc1,<RX_9>,valid,2,1,1.631578947368421,0.4895482253187058,9
+27739,"['CCOc1ccccc1C1(N)C(=O)Nc2ccc(OC)cc21', 'O=C(Cl)Oc1ccccc1']",CCOc1ccccc1C1(NC(=O)Oc2ccccc2)C(=O)Nc2ccc(OC)cc21,<RX_2>,train,2,1,1.032258064516129,0.03174869831458027,2
+17793,['O=[N+]([O-])c1cccc(-c2nc3n(n2)Cc2ccccc2-3)c1'],Nc1cccc(-c2nc3n(n2)Cc2ccccc2-3)c1,<RX_7>,train,1,1,1.105263157894737,0.10008345855698263,7
+19534,"['CS(=O)(=O)Cl', 'Nc1cc(C(=O)NC2CC2)ccc1F']",CS(=O)(=O)Nc1cc(C(=O)NC2CC2)ccc1F,<RX_2>,train,2,1,1.0555555555555556,0.05406722127027579,2
+9462,"['O=C(Nc1ccccc1)N1CCNCC1', 'O=C1CCc2cc(Br)ccc2C1']",O=C(Nc1ccccc1)N1CCN(C2CCc3cc(Br)ccc3C2)CC1,<RX_1>,train,2,1,1.0384615384615385,0.03774032798284711,1
+47466,"['COC(=O)c1cc(S(C)(=O)=O)c(N)cc1C', 'Cc1c(S(=O)(=O)Cl)sc2ccc(Cl)cc12']",COC(=O)c1cc(S(C)(=O)=O)c(NS(=O)(=O)c2sc3ccc(Cl)cc3c2C)cc1C,<RX_2>,test,2,1,1.0333333333333334,0.03278982282299097,2
+10136,['CCC(Nc1nccc(-c2cc(F)c(N(C)C)cc2Cl)c1[N+](=O)[O-])C1CC1'],CCC(Nc1nccc(-c2cc(F)c(N(C)C)cc2Cl)c1N)C1CC1,<RX_7>,train,1,1,1.08,0.0769610411361284,7
