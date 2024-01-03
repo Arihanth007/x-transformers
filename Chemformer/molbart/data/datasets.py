@@ -2,6 +2,7 @@ import random
 import functools
 import torch
 import pandas as pd
+from tqdm import tqdm
 import pytorch_lightning as pl
 from rdkit import Chem
 from pathlib import Path
@@ -424,7 +425,7 @@ class Zinc(ZincSlice):
         super().__init__(df)
 
     def _read_dir_df(self, path):
-        dfs = [pd.read_csv(f) for f in path.iterdir()]
+        dfs = [pd.read_csv(f) for f in tqdm(path.iterdir())]
         zinc_df = pd.concat(dfs, ignore_index=True, copy=False)
         return zinc_df
 

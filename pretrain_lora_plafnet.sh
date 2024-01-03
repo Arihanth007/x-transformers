@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH -A d4
-#SBATCH -p ihub
+#SBATCH -A plafnet2
+#SBATCH -p plafnet2
 #SBATCH -J llm
-#SBATCH --output=logs/data.out
+#SBATCH --output=logs/data_plafnet.out
 #SBATCH -c 40
 #SBATCH --gres=gpu:4
 #SBATCH --mem-per-cpu=2900
