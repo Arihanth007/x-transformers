@@ -158,13 +158,13 @@ class Chemformer(pl.LightningModule):
         non_lora_params = 0
         for n, p in self.named_parameters():
             if 'lora_' in n:
-                # p.requires_grad = True
-                p.requires_grad = False
-                non_lora_params += p.numel()
-            else:
                 p.requires_grad = True
                 # p.requires_grad = False
                 # non_lora_params += p.numel()
+            else:
+                # p.requires_grad = True
+                p.requires_grad = False
+                non_lora_params += p.numel()
         print(f"Freezing {non_lora_params/1e6:.2f}M parameters")
 
         self.save_hyperparameters()
@@ -313,7 +313,8 @@ if __name__ == '__main__':
     config['mask_token_id'] = tokeniser.vocab[tokeniser.mask_token]
 
     print("Reading dataset...")
-    dataset = UsptoFinetune('data/uspto50/uspto_50_sike.pickle', 0.5, forward=False, type_token=True)
+    # dataset = UsptoFinetune('data/uspto50/uspto_50_sike.pickle', 0.5, forward=False, type_token=True)
+    dataset = UsptoFinetune('data/uspto50/uspto_50_sike_single.pickle', 0.5, forward=False, type_token=True)
     print("Finished dataset.")
 
     print("Building data module...")
@@ -376,13 +377,14 @@ if __name__ == '__main__':
 
     if config['train']:
         trainer.fit(model, datamodule=dm)
+        trainer.test(model, datamodule=dm)
 
     else:
         # manually load data
         dm.setup('placeholder')
 
         device = 'cuda:2'
-        model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))[-1]
+        model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))[0]
         model = Chemformer.load_from_checkpoint(model_ckpt, config=config)
         print(f"Loaded model from {model_ckpt}")
         model = model.to(device)

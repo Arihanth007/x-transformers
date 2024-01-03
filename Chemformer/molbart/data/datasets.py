@@ -130,6 +130,10 @@ class ReactionDataset(_AbsDataset):
             other_mol_aug = self.aug([other_mol])[0] if aug else other_mol
             other_mol_str = Chem.MolToSmiles(other_mol_aug, canonical=not aug)
             return mol_str, other_mol_str
+        
+        # mol_str = mol_str.split('.')
+        # mol_str = sorted(mol_str, key=lambda x: len(x), reverse=True)
+        # mol_str = '.'.join(mol_str)
 
         return mol_str
 

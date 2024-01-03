@@ -5,6 +5,7 @@ import argparse
 from glob import glob
 from tqdm import tqdm
 from rdkit import Chem
+import pandas as pd
 
 import torch
 from torch.utils.data import DataLoader
@@ -213,14 +214,19 @@ class Chemformer(pl.LightningModule):
             # print(f"{i}:{p}\n{r}\n{g}")
 
             r_mol = Chem.MolFromSmiles(r)
+            g_mol = Chem.MolFromSmiles(g)
             if r_mol is None:
                 continue
-            r_mols = [Chem.MolFromSmiles(r_smi) for r_smi in r.split('.')]
-            g_mol = Chem.MolFromSmiles(g)
-            g_mols = [Chem.MolFromSmiles(g_smi) for g_smi in g.split('.')]
-
             total_acc.append(1 if g_mol is not None and r_mol.HasSubstructMatch(g_mol) and g_mol.HasSubstructMatch(r_mol) else 0)
-            partial_acc += [sum([1 if small_g is not None and small_r.HasSubstructMatch(small_g) and small_g.HasSubstructMatch(small_r) else 0 for small_g in g_mols]) for small_r in r_mols]
+            
+            r_mols = [Chem.MolFromSmiles(r_smi) for r_smi in r.split('.')]
+            g_mols = [Chem.MolFromSmiles(g_smi) for g_smi in g.split('.')]
+            par_acc = 0
+            for small_g in g_mols:
+                for small_r in r_mols:
+                    if small_g is not None and small_r is not None and small_r.HasSubstructMatch(small_g) and small_g.HasSubstructMatch(small_r):
+                        par_acc = 1
+            partial_acc.append(par_acc)
         
         return {'total_accuracy': sum(total_acc)/len(total_acc), 'partial_accuracy': sum(partial_acc)/len(partial_acc)}
 
@@ -311,6 +317,7 @@ if __name__ == '__main__':
 
     print("Reading dataset...")
     dataset = Uspto50('data/uspto50/uspto_50.pickle', 0.5, forward=False)
+    # dataset = Uspto50('data/uspto50/uspto_50_sike_single.pickle', 0.5, forward=False)
     # dataset = Uspto50Sike('data/uspto50/uspto_50.pickle', 0.5, forward=False)
     print("Finished dataset.")
 
@@ -359,7 +366,8 @@ if __name__ == '__main__':
     )
 
     trainer = pl.Trainer(
-        accelerator='gpu', devices=config['device_ids'], strategy='ddp_find_unused_parameters_True',
+        # accelerator='gpu', devices=config['device_ids'], strategy='ddp_find_unused_parameters_True',
+        accelerator='gpu', devices=-1, strategy='ddp_find_unused_parameters_True',
         max_epochs=-1, logger=logger,
         precision='bf16-mixed' if config['set_precision'] else '32-true',
         gradient_clip_val=0.5, gradient_clip_algorithm='norm',
@@ -377,16 +385,23 @@ if __name__ == '__main__':
         # manually load data
         dm.setup('placeholder')
 
-        device = 'cuda:2'
-        model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))[-1]
-        model = Chemformer.load_from_checkpoint(model_ckpt, config=config)
+        device = 'cuda'
+        model_ckpt = sorted(glob(f"{config['save_dir']}/{config['project']}/{config['run']}/*.ckpt"))
+        model_ckpt = model_ckpt[-1] if len(model_ckpt) > 0 else None
+        model = Chemformer.load_from_checkpoint(model_ckpt, config=config) if model_ckpt is not None else Chemformer(config)
         print(f"Loaded model from {model_ckpt}")
         model = model.to(device)
+
+        # also dump the predicted and actual products to a pandas dataframe
+        df = pd.DataFrame(columns=['target_smiles', 'predicted_smiles'])
+        all_target_smiles = []
+        all_predicted_smiles = []
 
         # generate sequences
         # for (split, split_dm) in [('test', dm.test_dataloader()), ('val', dm.val_dataloader()), ('train', dm.train_dataloader())]:
             # for ft in [0.90, 0.95, 0.99, 0.999]:
-        for (split, split_dm) in [('test', dm.test_dataloader()), ('val', dm.val_dataloader())]:
+        # for (split, split_dm) in [('test', dm.test_dataloader()), ('val', dm.val_dataloader())]:
+        for (split, split_dm) in [('test', dm.test_dataloader())]:
             for ft in [0.999]:
                 with tqdm(split_dm, desc=f'{split}-filter_threshold={ft}') as pbar:
                     partial_acc = []
@@ -410,6 +425,10 @@ if __name__ == '__main__':
                             g = g[:idx] if idx != -1 else g
                             # print(f"{i}:{p}\n{r}\n{g}")
 
+                            # add to dataframe
+                            all_target_smiles.append(r)
+                            all_predicted_smiles.append(g)
+
                             r_mol = Chem.MolFromSmiles(r)
                             if r_mol is None:
                                 continue
@@ -417,8 +436,21 @@ if __name__ == '__main__':
                             g_mol = Chem.MolFromSmiles(g)
                             g_mols = [Chem.MolFromSmiles(g_smi) for g_smi in g.split('.')]
 
-                            total_acc.append(1 if g_mol is not None and r_mol.HasSubstructMatch(g_mol) and g_mol.HasSubstructMatch(r_mol) else 0)
-                            partial_acc += [sum([1 if small_g is not None and small_r.HasSubstructMatch(small_g) and small_g.HasSubstructMatch(small_r) else 0 for small_g in g_mols]) for small_r in r_mols]
+                            acc = 1
+                            par_acc = 0
+                            for small_g in g_mols:
+                                if small_g is not None and r_mol.HasSubstructMatch(small_g) and small_g.HasSubstructMatch(r_mol):
+                                    par_acc = 1
+                                else:
+                                    acc = 0
+                            total_acc.append(acc)
+                            partial_acc.append(par_acc)
 
                             pbar.set_postfix({'total_accuray': sum(total_acc)/len(total_acc), 'partial_accuracy': sum(partial_acc)/len(partial_acc)})
+
+        # update dataframe
+        df['target_smiles'] = all_target_smiles
+        df['predicted_smiles'] = all_predicted_smiles
+        # save dataframe
+        df.to_csv(f"results/{config['run']}_test.csv", index=False)
             
